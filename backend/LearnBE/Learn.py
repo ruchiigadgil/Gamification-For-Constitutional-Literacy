@@ -238,6 +238,39 @@ def generate_endpoint():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+
+# code for gemini based mcqs
+@app.route('/generate-question', methods=['POST'])
+def generate_question():
+    try:
+        # System prompt: guide Gemini to generate a question
+        system_prompt = """
+        You are an educational AI. Generate ONE multiple-choice question about the Indian Constitution.
+        - Provide the question
+        - Give 4 answer options
+        - Indicate which option is correct
+        - Give a small hint suitable for learning
+        Format the response as JSON:
+        {
+            "question": "Question text",
+            "options": ["opt1", "opt2", "opt3", "opt4"],
+            "answer": "correct option text",
+            "hint": "learning hint"
+        }
+        Keep it easy and learning-oriented.
+        """
+
+        user_input = "Generate a question now"
+
+        response_text = generate_content(user_input, system_prompt)
+        # parse JSON
+        question_data = json.loads(response_text)
+        return jsonify(question_data)
+    except Exception as e:
+        return jsonify({"error": str(e), "raw_response": response_text}), 500
+
+
+
 def command_line_generate():
     try:
         with open("systemprompt.txt", "r", encoding="utf-8") as sp:

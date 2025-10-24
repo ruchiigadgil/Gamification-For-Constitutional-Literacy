@@ -1,78 +1,10 @@
 import React, { useState } from "react";
 import PlayerToken from "./PlayerToken";
-import { ladders, snakes } from "../utils/jumps"; // Make sure path is correct
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { ladders, snakes } from "../utils/jumps";
+import { useNavigate } from "react-router-dom";
 
 const GameComponent = ({ boardImage }) => {
-  const navigate = useNavigate(); // Initialize navigate hook
-  const questionsData = [
-    {
-      q: "What is the supreme law of India?",
-      options: [
-        "The Constitution of India",
-        "The Indian Penal Code",
-        "The Civil Procedure Code",
-        "The Government of India Act",
-      ],
-      answer: "The Constitution of India",
-    },
-    {
-      q: "Who is known as the Father of the Indian Constitution?",
-      options: [
-        "Mahatma Gandhi",
-        "B. R. Ambedkar",
-        "Jawaharlal Nehru",
-        "Sardar Patel",
-      ],
-      answer: "B. R. Ambedkar",
-    },
-    {
-      q: "How many fundamental rights are there in the Indian Constitution?",
-      options: ["6", "7", "8", "9"],
-      answer: "6",
-    },
-    {
-      q: "Which part of the Constitution deals with Fundamental Rights?",
-      options: ["Part III", "Part II", "Part IV", "Part V"],
-      answer: "Part III",
-    },
-    {
-      q: "What is the minimum age to contest in Lok Sabha elections?",
-      options: ["18 years", "21 years", "25 years", "30 years"],
-      answer: "25 years",
-    },
-    {
-      q: "Which Article of the Constitution guarantees the Right to Equality?",
-      options: ["Article 14", "Article 15", "Article 16", "Article 17"],
-      answer: "Article 14",
-    },
-    {
-      q: "How many Schedules are there in the Indian Constitution?",
-      options: ["10", "11", "12", "13"],
-      answer: "12",
-    },
-    {
-      q: "Which amendment is known as the Mini Constitution?",
-      options: [
-        "42nd Amendment",
-        "44th Amendment",
-        "73rd Amendment",
-        "86th Amendment",
-      ],
-      answer: "42nd Amendment",
-    },
-    {
-      q: "Which body is empowered to amend the Constitution?",
-      options: ["Lok Sabha", "Rajya Sabha", "Parliament", "President"],
-      answer: "Parliament",
-    },
-    {
-      q: "What is the length of the term of the President of India?",
-      options: ["4 years", "5 years", "6 years", "7 years"],
-      answer: "5 years",
-    },
-  ];
-
+  const navigate = useNavigate();
   const initialPlayers = [
     { name: "You", position: 1 },
     { name: "Computer", position: 1 },
@@ -85,9 +17,52 @@ const GameComponent = ({ boardImage }) => {
   const [showQuestion, setShowQuestion] = useState(false);
   const [pendingMove, setPendingMove] = useState(null);
   const [gameOver, setGameOver] = useState(false);
+  const [loadingQuestion, setLoadingQuestion] = useState(false);
+  const [error, setError] = useState(null);
 
-  const getRandomQuestion = () => {
-    return questionsData[Math.floor(Math.random() * questionsData.length)];
+  const getRandomQuestion = async () => {
+    try {
+      setLoadingQuestion(true);
+      setError(null);
+      const response = await fetch("http://localhost:5000/generate-question", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: "Generate a question now" }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      return {
+        q: data.question,
+        options: data.options,
+        answer: data.answer,
+        hint: data.hint,
+      };
+    } catch (err) {
+      setError("Failed to fetch question. Using fallback question.");
+      return {
+        q: "What is the supreme law of India?",
+        options: [
+          "The Constitution of India",
+          "The Indian Penal Code",
+          "The Civil Procedure Code",
+          "The Government of India Act",
+        ],
+        answer: "The Constitution of India",
+        hint: "It is the foundational legal document of the country.",
+      };
+    } finally {
+      setLoadingQuestion(false);
+    }
   };
 
   const updatePosition = (pos, playerIndex) => {
@@ -116,13 +91,13 @@ const GameComponent = ({ boardImage }) => {
     }
   };
 
-  const movePlayer = (roll, playerIndex) => {
+  const movePlayer = async (roll, playerIndex) => {
     const currentPlayer = players[playerIndex];
     let newPosition = Math.min(currentPlayer.position + roll, 100);
 
     if (playerIndex === 0) {
       if (ladders[newPosition]) {
-        const q = getRandomQuestion();
+        const q = await getRandomQuestion();
         setPendingMove({
           newPosition,
           jump: ladders[newPosition],
@@ -134,7 +109,7 @@ const GameComponent = ({ boardImage }) => {
         setShowQuestion(true);
         return;
       } else if (snakes[newPosition]) {
-        const q = getRandomQuestion();
+        const q = await getRandomQuestion();
         setPendingMove({
           newPosition,
           jump: snakes[newPosition],
@@ -159,8 +134,8 @@ const GameComponent = ({ boardImage }) => {
     updatePosition(newPosition, playerIndex);
   };
 
-  const rollDice = () => {
-    if (gameOver || turn !== 0) return;
+  const rollDice = async () => {
+    if (gameOver || turn !== 0 || loadingQuestion) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     setDice(roll);
@@ -180,21 +155,36 @@ const GameComponent = ({ boardImage }) => {
       setMessage(
         correct
           ? "Correct! 🪜 Climbed to position " + pendingMove.jump
-          : "Wrong! Stayed at position " + pendingMove.newPosition
+          : "Wrong Answer!"
       );
+      setShowQuestion(false);
+      setTimeout(() => {
+        if (!correct) {
+          setMessage("Wrong! Stayed at position " + pendingMove.newPosition);
+        }
+        setTimeout(
+          () => {
+            updatePosition(finalPosition, pendingMove.playerIndex);
+          },
+          correct ? 0 : 1000
+        );
+      }, 1000);
     } else if (pendingMove.type === "snake") {
       finalPosition = correct ? pendingMove.newPosition : pendingMove.jump;
-      setMessage(
-        correct
-          ? "Correct! 🛡️ Avoided the snake!"
-          : "Wrong! 🐍 Slid down to position " + pendingMove.jump
-      );
+      setMessage(correct ? "Correct! 🛡️ Avoided the snake!" : "Wrong Answer!");
+      setShowQuestion(false);
+      setTimeout(() => {
+        if (!correct) {
+          setMessage("Wrong! 🐍 Slid down to position " + pendingMove.jump);
+        }
+        setTimeout(
+          () => {
+            updatePosition(finalPosition, pendingMove.playerIndex);
+          },
+          correct ? 0 : 1000
+        );
+      }, 1000);
     }
-
-    setShowQuestion(false);
-    setTimeout(() => {
-      updatePosition(finalPosition, pendingMove.playerIndex);
-    }, 1000);
   };
 
   const resetGame = () => {
@@ -205,6 +195,8 @@ const GameComponent = ({ boardImage }) => {
     setShowQuestion(false);
     setPendingMove(null);
     setGameOver(false);
+    setError(null);
+    setLoadingQuestion(false);
   };
 
   const goToDashboard = () => {
@@ -233,14 +225,25 @@ const GameComponent = ({ boardImage }) => {
           </div>
 
           <div className="game-info">
-            {message && <h3 className="game-message">{message}</h3>}
+            {error && <div className="error-message">{error}</div>}
+            {message && (
+              <h3
+                className={`game-message ${
+                  message.startsWith("Wrong") ? "wrong" : ""
+                }`}
+              >
+                {message}
+              </h3>
+            )}
             <div className="dice-display">Dice: {dice || " "}</div>
             <div className="btn-group">
               {!gameOver && (
                 <button
                   onClick={rollDice}
-                  className={`roll-btn ${turn !== 0 ? "fade" : ""}`}
-                  disabled={turn !== 0}
+                  className={`roll-btn ${
+                    turn !== 0 || loadingQuestion ? "fade" : ""
+                  }`}
+                  disabled={turn !== 0 || loadingQuestion}
                 >
                   🎲 Roll Dice
                 </button>
@@ -253,10 +256,20 @@ const GameComponent = ({ boardImage }) => {
             </div>
           </div>
 
+          {loadingQuestion && (
+            <div className="loading-modal">
+              <div className="loading-box">
+                <div className="loading-spinner"></div>
+                <span>Loading question...</span>
+              </div>
+            </div>
+          )}
+
           {showQuestion && pendingMove && (
             <div className="question-modal">
               <div className="question-box">
                 <h3>{pendingMove.q.q}</h3>
+                <p className="question-hint">{pendingMove.q.hint}</p>
                 {pendingMove.q.options.map((opt, i) => (
                   <button
                     key={i}
@@ -275,9 +288,7 @@ const GameComponent = ({ boardImage }) => {
   );
 };
 
-/* Embedded CSS - Start */
 const styles = `
-  /* Define custom properties (variables) */
   :root {
       --primary: #4361ee;
       --secondary: #3f37c9;
@@ -290,7 +301,6 @@ const styles = `
       --glass-bg: rgba(255, 255, 255, 0.1);
   }
 
-  /* Main App Container */
   .game-container .app {
       display: flex;
       flex-direction: row;
@@ -299,13 +309,12 @@ const styles = `
       max-width: 100%;
       margin: 0 auto;
       font-family: 'Poppins', sans-serif;
-      color: var(--dark); /* Ensure readable text color */
+      color: var(--dark);
       min-height: 100vh;
       width: 100%;
       position: relative;
   }
 
-  /* Back Button Container */
   .game-container .back-button-container {
       position: absolute;
       top: 0.5rem;
@@ -331,7 +340,6 @@ const styles = `
       transform: scale(1.05);
   }
 
-  /* Board Container */
   .game-container .board-container {
       position: relative;
       width: 100%;
@@ -352,15 +360,14 @@ const styles = `
       border-radius: inherit;
   }
 
-  /* Game Info - Fixed Size with Grid Layout */
   .game-container .game-info {
       background: var(--glass-bg);
       backdrop-filter: blur(5px);
       padding: 0.5rem;
       border-radius: 10px;
       margin-top: 0.5rem;
-      width: 600px; /* Fixed width */
-      height: 170px; /* Fixed height */
+      width: 600px;
+      height: 170px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.2);
       display: grid;
@@ -368,26 +375,82 @@ const styles = `
         "message"
         "dice"
         "buttons";
-      grid-template-rows: 1fr 1fr 1fr; /* Equal rows for message, dice, and buttons */
-      overflow: hidden; /* Prevent content from expanding beyond fixed size */
+      grid-template-rows: 1fr 1fr 1fr;
+      overflow: hidden;
   }
 
-  /* Game Message */
+  .game-container .error-message {
+      grid-area: message;
+      font-size: 1rem;
+      color: var(--danger);
+      text-align: center;
+      padding: 0.2rem;
+      animation: fadeIn 0.5s ease-in;
+  }
+
+  .game-container .loading-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(3px);
+  }
+
+  .game-container .loading-box {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 300px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+  }
+
+  .game-container .loading-spinner {
+      width: 30px;
+      height: 30px;
+      border: 4px solid var(--primary);
+      border-top: 4px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+  }
+
+  .game-container .loading-box span {
+      font-size: 1rem;
+      color: var(--dark);
+      font-weight: 500;
+  }
+
   .game-container .game-message {
       grid-area: message;
-      font-size: 2.0rem;
+      font-size: 2rem;
       margin: 0.1rem 0;
       padding: 0.1rem;
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.1);
-      color: var(--dark); /* Dark text for readability */
+      color: var(--dark);
       text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      animation: fadeIn 0.5s ease-in;
   }
 
-  /* Dice Display */
+  .game-container .game-message.wrong {
+      background: rgba(247, 37, 133, 0.2);
+      color: var(--danger);
+      animation: shake 0.5s ease-in-out;
+  }
+
   .game-container .dice-display {
       grid-area: dice;
       margin: 0.2rem 0;
@@ -400,7 +463,7 @@ const styles = `
       padding: 0.1rem 0.2rem;
       font-size: 2.0rem;
       font-weight: 700;
-      color: var(--dark); /* Dark text for readability */
+      color: var(--dark);
       background: linear-gradient(135deg, var(--primary), var(--accent));
       border-radius: 15px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -418,7 +481,6 @@ const styles = `
       box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
   }
 
-  /* Buttons */
   .game-container .btn-group {
       grid-area: buttons;
       display: flex;
@@ -435,7 +497,7 @@ const styles = `
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s ease; /* Smooth transition for opacity */
+      transition: all 0.3s ease;
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
   }
 
@@ -445,8 +507,8 @@ const styles = `
   }
 
   .game-container .roll-btn.fade {
-      opacity: 0.5; /* Fade effect when computer is playing */
-      cursor: not-allowed; /* Indicate it's not clickable */
+      opacity: 0.5;
+      cursor: not-allowed;
   }
 
   .game-container .roll-btn:hover {
@@ -455,7 +517,7 @@ const styles = `
   }
 
   .game-container .roll-btn.fade:hover {
-      transform: none; /* No scale on hover when faded */
+      transform: none;
   }
 
   .game-container .reset-btn {
@@ -468,7 +530,6 @@ const styles = `
       transform: scale(1.05);
   }
 
-  /* Question Modal */
   .game-container .question-modal {
       position: fixed;
       top: 0;
@@ -498,6 +559,13 @@ const styles = `
       line-height: 1.2;
   }
 
+  .game-container .question-hint {
+      color: var(--secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      font-style: italic;
+  }
+
   .game-container .question-option {
       display: block;
       width: 100%;
@@ -515,7 +583,28 @@ const styles = `
       border-color: var(--primary);
   }
 
-  /* Responsive Design */
+  @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+  }
+
+  @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+  }
+
+  @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+  }
+
+  @keyframes pulse {
+      0% { opacity: 0.7; }
+      50% { opacity: 1; }
+      100% { opacity: 0.7; }
+  }
+
   @media (max-width: 768px) {
       .game-container .board-container {
           width: 90vmin;
@@ -553,11 +642,23 @@ const styles = `
       .game-container .game-message {
           font-size: 1rem;
       }
+
+      .game-container .loading-box {
+          max-width: 250px;
+          padding: 1rem;
+      }
+
+      .game-container .loading-spinner {
+          width: 24px;
+          height: 24px;
+      }
+
+      .game-container .loading-box span {
+          font-size: 0.9rem;
+      }
   }
 `;
-/* Embedded CSS - End */
 
-/* Apply the styles to the component */
 const styleSheet = document.createElement("style");
 styleSheet.textContent = styles;
 document.head.appendChild(styleSheet);
