@@ -1,0 +1,14 @@
+.token {
+    position: absolute;
+    width: 5%;
+    /* Smaller size to avoid overlap */
+    height: 5%;
+    font-size: 3rem;
+    /* Adjust font size */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    color: black;
+}

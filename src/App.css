@@ -36,3 +36,51 @@
     transform: rotate(360deg);
   }
 }
+
+:root {
+  --primary-color: #5b3e90; /* Purple */
+  --secondary-color: #ff9f43; /* Orange */
+  --accent-color: #2e86de; /* Blue */
+  --background-color: #f5f6fa;
+  --text-color: #2c3e50;
+  --sidebar-bg: #ffffff;
+  --card-bg: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.app {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.main-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+.content-shifted {
+  margin-left: 250px;
+}
+
+@media (max-width: 768px) {
+  .content-shifted {
+    margin-left: 0;
+  }
+}

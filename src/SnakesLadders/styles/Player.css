@@ -1,0 +1,10 @@
+.snakes-ladders-game .token {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    transition: all 0.5s ease;
+}
+
+.snakes-ladders-game .token.computer {
+    transform: translateX(30%);
+}
