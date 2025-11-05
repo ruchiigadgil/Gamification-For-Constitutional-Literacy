@@ -26,7 +26,7 @@ function MultiQuiz() {
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io("ws://localhost:5000")
+  const newSocket = io("ws://localhost:5009")
 
     newSocket.on("connect", () => {
       setConnectionError(false)

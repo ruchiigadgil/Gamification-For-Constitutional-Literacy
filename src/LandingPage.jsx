@@ -12,7 +12,7 @@ const LandingPage = () => {
       setScrollPosition(position)
 
       if (position > window.innerHeight / 2) {
-        navigate("/dashboard")
+        navigate("/login")
       }
     }
 
@@ -222,7 +222,7 @@ const LandingPage = () => {
           </div>
           <div style={scrollIndicatorStyle}>
             <Link 
-              to="/dashboard" 
+              to="/login" 
               style={startButtonStyle}
               onMouseEnter={(e) => {
                 e.target.style.background = 'rgba(255, 255, 255, 0.25)'

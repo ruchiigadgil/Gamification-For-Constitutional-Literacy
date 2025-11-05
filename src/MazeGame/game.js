@@ -205,43 +205,309 @@ const Game = () => {
 }, [gameState, movePlayer]); // Added movePlayer to dependencies
 
   return (
-    <div className="container">
-      <h1>Law Maze</h1>
-      <p className="score">Score: {score}</p>
-      {/* <p>Debug State: {gameState}</p> */}
-
-      {(gameState === 'playing' || gameState === 'trivia' || gameState === 'explanation') && ( // Show maze in these states
-        <>
-          <Maze position={position} maze={maze} />
-          {gameState === 'playing' && <p>Use arrow keys to move to the green square (6,6)!</p>}
-        </>
-      )}
-
-      {gameState === 'trivia' && currentQuestion && (
-        <Trivia question={currentQuestion} onAnswer={handleAnswer} />
-      )}
-
-      {gameState === 'won' && (
-        <div>
-          <h2 className="message won">You Won!</h2>
-          <p>Final Score: {score}</p>
-          <button className="button" onClick={() => { setPosition([0, 0]); setScore(0); setGameState('playing'); }}>
-            Play Again
-          </button>
+    <div className="maze-game-container">
+      <div className="maze-game-content">
+        <div className="maze-header">
+          <h1 className="maze-title">Law Maze Challenge</h1>
+          <div className="maze-score">
+            <span className="score-label">Score:</span>
+            <span className="score-value">{score}</span>
+          </div>
         </div>
-      )}
 
-      <Modal
-        show={showModal}
-        // Display explanation on correct answer, wrong answer message on incorrect
-        message={gameState === 'explanation' ? explanationText : "Wrong answer! -5 points. Try again!"}
-        onClose={() => {
-          setShowModal(false);
-          setExplanationText(null); // Clear explanation text when closing
-          setGameState('playing'); // Always transition back to playing after modal close
-        }}
-      />
+        {(gameState === 'playing' || gameState === 'trivia' || gameState === 'explanation') && (
+          <div className="maze-game-section">
+            <Maze position={position} maze={maze} />
+            {gameState === 'playing' && (
+              <p className="maze-instruction">
+                🎮 Use arrow keys to navigate to the goal! Answer questions correctly to earn points.
+              </p>
+            )}
+          </div>
+        )}
+
+        {gameState === 'won' && (
+          <div className="maze-won-container">
+            <div className="maze-won-content">
+              <h2 className="maze-won-title">🎉 Congratulations!</h2>
+              <p className="maze-won-message">You've completed the Law Maze!</p>
+              <div className="maze-final-score">
+                <span className="final-score-label">Final Score:</span>
+                <span className="final-score-value">{score}</span>
+              </div>
+              <button 
+                className="maze-play-again-btn" 
+                onClick={() => { 
+                  setPosition([0, 0]); 
+                  setScore(0); 
+                  setGameState('playing'); 
+                }}
+              >
+                🔄 Play Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {gameState === 'trivia' && currentQuestion && (
+          <div className="trivia-overlay">
+            <Trivia question={currentQuestion} onAnswer={handleAnswer} />
+          </div>
+        )}
+
+        <Modal
+          show={showModal}
+          message={gameState === 'explanation' ? explanationText : "Wrong answer! -5 points. Try again!"}
+          onClose={() => {
+            setShowModal(false);
+            setExplanationText(null);
+            setGameState('playing');
+          }}
+        />
+      </div>
     </div>
   );
 };
+
+const styles = `
+  .maze-game-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8eaff 50%, #f0f2ff 100%);
+    padding: 1.5rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .maze-game-content {
+    max-width: 750px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 1.75rem;
+    box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15), 0 8px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .maze-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .maze-title {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .maze-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    border-radius: 14px;
+    border: 2px solid rgba(99, 102, 241, 0.2);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .score-label {
+    color: #64748b;
+  }
+
+  .score-value {
+    color: #6366f1;
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+
+  .maze-game-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .maze-instruction {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.875rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(139, 92, 246, 0.08));
+    border-radius: 12px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    max-width: 450px;
+  }
+
+  .maze-won-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem 0;
+  }
+
+  .maze-won-content {
+    text-align: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+    border-radius: 18px;
+    border: 2px solid rgba(99, 102, 241, 0.2);
+  }
+
+  .maze-won-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+  }
+
+  .maze-won-message {
+    font-size: 1rem;
+    color: #64748b;
+    margin-bottom: 1.25rem;
+  }
+
+  .maze-final-score {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  }
+
+  .final-score-label {
+    font-size: 1.125rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .final-score-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .maze-play-again-btn {
+    padding: 0.875rem 2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .maze-play-again-btn:hover {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+  }
+
+  .trivia-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .trivia-overlay .trivia-container {
+    margin: 0;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-30px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .maze-game-container {
+      padding: 1rem;
+    }
+
+    .maze-game-content {
+      padding: 1.5rem;
+    }
+
+    .maze-title {
+      font-size: 1.75rem;
+    }
+
+    .maze-score {
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .score-value {
+      font-size: 1.25rem;
+    }
+
+    .maze-won-title {
+      font-size: 1.5rem;
+    }
+
+    .final-score-value {
+      font-size: 1.5rem;
+    }
+
+    .trivia-overlay {
+      padding: 0.5rem;
+    }
+
+    .trivia-overlay .trivia-container {
+      max-height: 95vh;
+    }
+  }
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.textContent = styles;
+document.head.appendChild(styleSheet);
+
 export default Game;

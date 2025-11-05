@@ -14,6 +14,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+package-lock.json
 
 # Build & cache directories
 build/
@@ -25,6 +26,15 @@ dist/
 .parcel-cache/
 coverage/
 .nyc_output/
+
+# React build outputs
+/build
+/dist
+
+# Testing
+/coverage
+*.lcov
+.nyc_output
 
 ###############################
 # Python / Flask backend      #
@@ -40,33 +50,113 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .benchmarks/
+*.egg-info/
+*.egg
+*.whl
 
 # Virtual environments
 venv/
 */venv/
+**/venv/
 .venv/
 .env/
 env/
+ENV/
+virtualenv/
+
+# Python distribution / packaging
+pip-wheel-metadata/
+pip-log.txt
+*.manifest
+*.spec
+
+# Flask specific
+instance/
+.webassets-cache
 
 ###############################
 # Environment & secrets       #
 ###############################
+# CRITICAL: Never commit these files!
 .env
 .env.*
 *.env
 **/.env
+backend/.env
+backend/auth-server/.env
+backend/LearnBE/.env
+backend/LlmBE/.env
 !.env.example
+!**/.env.example
+
+# API Keys and secrets
+**/secrets.json
+**/config.json
+*.key
+*.pem
+*.cert
+*.crt
 
 ###############################
-# Editor / OS cruft           #
+# Database                    #
+###############################
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+db.json
+mongo-data/
+
+###############################
+# Editor / IDE                #
 ###############################
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+###############################
+# OS cruft                    #
+###############################
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
+$RECYCLE.BIN/
+
+# Windows
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
 
 ###############################
 # Misc tooling                #
@@ -74,7 +164,47 @@ desktop.ini
 *.pid
 *.seed
 *.tgz
-pip-wheel-metadata/
-pip-log.txt
-*.egg-info/
 htmlcov/
+.grunt
+.lock-wscript
+*.tsbuildinfo
+.npm
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn
+.yarn-integrity
+yarn-error.log
+.pnp.*
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+###############################
+# Project specific            #
+###############################
+# Add any project-specific files to ignore below
+
+# Logs
+logs/
+*.log
+
+# Local development
+.local/
+local/

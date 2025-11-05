@@ -46,7 +46,7 @@ const Dashboard = () => {
     },
     {
       id: 'lawyers',
-      title: 'Connect with Lawyers',
+      title: 'Connect with People',
       description: 'Get Expert Legal Consultation',
       icon: '👔',
       color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
