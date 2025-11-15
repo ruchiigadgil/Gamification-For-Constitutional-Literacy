@@ -6,8 +6,8 @@ const Dashboard = () => {
   const menuItems = [
     {
       id: 'nlp',
-      title: 'NLP',
-      description: 'Natural Language Processing for Constitution',
+      title: 'AI Chat-Bot',
+      description: 'Ask all your Constitution related doubts here',
       icon: '💬',
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       path: '/nlp'

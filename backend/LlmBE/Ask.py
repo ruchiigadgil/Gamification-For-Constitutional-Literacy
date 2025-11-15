@@ -3,8 +3,7 @@ import base64
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 from dotenv import load_dotenv
 import sys
 
@@ -23,48 +22,39 @@ CORS(app)  # Enable CORS for all routes
 
 def generate_content(user_query, system_prompt_text):
     try:
-        # Initialize GENAI client (exact from both files)
-        client = genai.Client(api_key=api_key)
-        model = "gemini-2.0-flash-exp"
+        # Configure the Gemini API
+        genai.configure(api_key=api_key)
+        # Use the same stable model as Learn.py to avoid API/version mismatches
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
-        contents = [
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_text(text=user_query),
-                ]
+        # Combine system prompt and user query
+        prompt = f"{system_prompt_text}\n\nUser query: {user_query}"
+
+        # Generate content
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.7,
+                top_p=0.95,
+                top_k=40,
+                max_output_tokens=8192,
             )
-        ]
-
-        # Try without Google Search tool first to avoid quota/rate limit issues
-        # tools = [
-        #     types.Tool(google_search=types.GoogleSearch())
-        # ]
-
-        generate_content_config = types.GenerateContentConfig(
-            temperature=0.7,  # Reduced from 2 to 0.7 for more stable responses
-            top_p=0.95,
-            top_k=40,
-            max_output_tokens=8192,
-            # tools=tools,  # Commented out to avoid google search issues
-            response_mime_type="text/plain",
-            system_instruction=[
-                types.Part.from_text(text=system_prompt_text)
-            ]
         )
 
-        # Collect response from GENAI (streaming, exact from both files)
-        response_text = ""
-        for chunk in client.models.generate_content_stream(
-            model=model,
-            contents=contents,
-            config=generate_content_config,
-        ):
-            response_text += chunk.text
+        response_text = response.text
+        if not response_text:
+            response_text = "".join(
+                part.text
+                for candidate in getattr(response, "candidates", [])
+                for part in getattr(getattr(candidate, "content", None), "parts", [])
+                if hasattr(part, "text")
+            )
 
-        # Remove code block markers if present (exact from front.py)
-        if response_text.startswith("```json") and response_text.endswith("```"):
-            response_text = response_text.strip("```json").strip("```")
+        # Remove code block markers if present
+        if response_text.startswith("```json"):
+            response_text = response_text.replace("```json", "").replace("```", "").strip()
+        elif response_text.startswith("```"):
+            response_text = response_text.replace("```", "").strip()
 
         return response_text
     except Exception as e:
