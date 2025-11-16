@@ -56,7 +56,7 @@ app.use((req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Auth Server running on http://localhost:${PORT}`);
 });

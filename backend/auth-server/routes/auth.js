@@ -3,6 +3,22 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Helper function to check and reset daily word completion
+const checkAndResetDailyWord = async (user) => {
+  const today = new Date().toDateString();
+  
+  // If the completion date is not today, reset it
+  if (user.dailyWordCompletedDate && user.dailyWordCompletedDate !== today) {
+    user.dailyWordCompleted = false;
+    user.dailyWordCompletedDate = null;
+    await user.save();
+    console.log(`🔄 Reset daily word for user: ${user.email}`);
+  }
+  
+  // Return whether it's completed today
+  return user.dailyWordCompletedDate === today;
+};
+
 // Generate JWT Token
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
@@ -138,6 +154,9 @@ router.post('/login', async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
+    // Check and reset daily word if it's a new day
+    const isDailyWordCompletedToday = await checkAndResetDailyWord(user);
+
     // Send response
     res.status(200).json({
       success: true,
@@ -151,7 +170,8 @@ router.post('/login', async (req, res) => {
         xp: user.xp,
         badges: user.badges,
         streak: user.streak,
-        quizzesTaken: user.quizzesTaken
+        quizzesTaken: user.quizzesTaken,
+        dailyWordCompleted: isDailyWordCompletedToday
       }
     });
 
@@ -193,6 +213,9 @@ router.get('/verify', async (req, res) => {
       });
     }
 
+    // Check and reset daily word if it's a new day
+    const isDailyWordCompletedToday = await checkAndResetDailyWord(user);
+
     res.status(200).json({
       success: true,
       user: {
@@ -203,7 +226,8 @@ router.get('/verify', async (req, res) => {
         xp: user.xp,
         badges: user.badges,
         streak: user.streak,
-        quizzesTaken: user.quizzesTaken
+        quizzesTaken: user.quizzesTaken,
+        dailyWordCompleted: isDailyWordCompletedToday
       }
     });
 
@@ -212,6 +236,67 @@ router.get('/verify', async (req, res) => {
     res.status(401).json({
       success: false,
       message: 'Invalid or expired token',
+      error: error.message
+    });
+  }
+});
+
+// @route   POST /api/auth/complete-daily
+// @desc    Mark daily word as completed
+// @access  Protected
+router.post('/complete-daily', async (req, res) => {
+  try {
+    // Get token from header
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided'
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Update user
+    const today = new Date().toDateString();
+    const user = await User.findByIdAndUpdate(
+      decoded.id,
+      {
+        dailyWordCompleted: true,
+        dailyWordCompletedDate: today,
+        $inc: { xp: 50 } // Award 50 XP for completing daily word
+      },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    console.log('✅ Daily word completed for user:', user.email);
+
+    res.status(200).json({
+      success: true,
+      message: 'Daily word marked as completed',
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        xp: user.xp,
+        dailyWordCompleted: true
+      }
+    });
+
+  } catch (error) {
+    console.error('Complete Daily Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
       error: error.message
     });
   }

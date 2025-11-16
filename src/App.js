@@ -22,7 +22,7 @@ import Pictionary from "./PictionaryGame/Pictionary"
 import Team from "./pages/About/Team"
 import Profile from "./pages/About/Profile"
 import { ProfileContextProvider } from "./pages/About/ProfileContext";
-
+import GameDaily from "./Daily/Game"
 
 function AppContent() {
   // const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -57,6 +57,7 @@ function AppContent() {
                 <Route path="/maze_game" element={<Game />} />
                 <Route path="/pictionary" element={<Pictionary />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/daily" element={<GameDaily/>}/>
               </Routes>
               {/* </div> */}
             </div>

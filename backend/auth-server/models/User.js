@@ -49,6 +49,14 @@ const userSchema = new mongoose.Schema({
   streak: {
     type: Number,
     default: 0
+  },
+  dailyWordCompleted: {
+    type: Boolean,
+    default: false
+  },
+  dailyWordCompletedDate: {
+    type: String,
+    default: null
   }
 });
 

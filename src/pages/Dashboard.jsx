@@ -1,7 +1,22 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 
 const Dashboard = () => {
   const [hoveredCard, setHoveredCard] = useState(null)
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    // Get user data from localStorage
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        console.log('User loaded:', parsedUser);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
 
   const menuItems = [
     {
@@ -45,12 +60,12 @@ const Dashboard = () => {
       path: '/books'
     },
     {
-      id: 'lawyers',
-      title: 'Connect with People',
-      description: 'Get Expert Legal Consultation',
-      icon: '👔',
+      id: 'daily',
+      title: 'Daily Consti-Word',
+      description: 'Daily Word Challenge',
+      icon: '📝',
       color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-      path: '/connect-lawyers'
+      path: '/daily'
     }
   ]
 
@@ -199,6 +214,16 @@ const Dashboard = () => {
         <div style={containerStyle}>
           <div style={headerStyle}>
             <h1 style={titleStyle}>InConQuest</h1>
+            {user && (
+              <p style={{
+                fontSize: '1.3rem',
+                color: '#64748b',
+                fontWeight: '500',
+                marginTop: '10px'
+              }}>
+                Welcome back, <span style={{ color: '#667eea', fontWeight: '700' }}>{user.fullName}</span>! 👋
+              </p>
+            )}
           </div>
 
           <div style={gridStyle}>
@@ -216,6 +241,26 @@ const Dashboard = () => {
                   onMouseLeave={() => setHoveredCard(null)}
                   onClick={() => handleNavigation(item.path)}
                 >
+                  {item.id === 'daily' && user?.dailyWordCompleted && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      backgroundColor: '#6aaa64',
+                      borderRadius: '50%',
+                      width: '35px',
+                      height: '35px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.3rem',
+                      boxShadow: '0 4px 12px rgba(106, 170, 100, 0.4)',
+                      zIndex: 10,
+                      animation: 'pulse 2s infinite'
+                    }}>
+                      ✓
+                    </div>
+                  )}
                   <div style={cardContentStyle}>
                     <span style={iconStyle(isHovered)}>{item.icon}</span>
                     <h3 style={cardTitleStyle(isHovered)}>{item.title}</h3>
