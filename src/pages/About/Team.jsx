@@ -14,7 +14,7 @@ const Team = () => {
     {
       id: 1,
       name: "Rohana Mahimkar",
-      age: 19,
+      age: 20,
       linkedin: "https://www.linkedin.com/in/rohana-mahimkar-96341a283/",
       github: "https://github.com/rohana-2005",
       insta: "https://www.instagram.com/rohana.m?igsh=ZXhqOGszN2xuMmxu",
@@ -23,7 +23,7 @@ const Team = () => {
     {
       id: 2,
       name: "Sania Valiyani",
-      age: 19,
+      age: 20,
       linkedin: "https://www.linkedin.com/in/sania-valiyani-9a714528b/",
       github: "https://github.com/SaniaValiyani",
       insta: "https://www.instagram.com/valiyani_sania_?igsh=eTQ5NTliZDlsaXY5",
@@ -31,21 +31,21 @@ const Team = () => {
     },
     {
       id: 3,
-      name: "Ruchi Gadgil",
-      age: 19,
-      linkedin: "https://www.linkedin.com/in/ruchi-gadgil-98099617a/",
-      github: "https://github.com/ruchiigadgil",
-      insta: "https://www.instagram.com/ruchigadgil?igsh=NmR2amJiaTVsYWtk",
-      image: ruchi,
-    },
-    {
-      id: 4,
       name: "Ridhi Agrawal",
-      age: 19,
+      age: 20,
       linkedin: "https://www.linkedin.com/in/ridhi-agrawal-8648b42aa/",
       github: "https://github.com/ridhi607",
       insta: "https://www.instagram.com/_ridhihikbyee",
       image: ridhi,
+    },
+    {
+      id: 4,
+      name: "Ruchi Gadgil",
+      age: 20,
+      linkedin: "https://www.linkedin.com/in/ruchi-gadgil-98099617a/",
+      github: "https://github.com/ruchiigadgil",
+      insta: "https://www.instagram.com/ruchigadgil?igsh=NmR2amJiaTVsYWtk",
+      image: ruchi,
     },
   ];
 
