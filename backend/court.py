@@ -1,12 +1,14 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 import json
 import re
 
-# Load environment variables from parent directory if not found
+from google import genai
+from google.genai import types
+
+# Load environment variables
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 if not os.path.exists(env_path):
     env_path = os.path.join(os.path.dirname(__file__), 'LlmBE', '.env')
@@ -23,7 +25,31 @@ if not GEMINI_API_KEY:
     exit(1)
 
 print(f"✅ API Key loaded: {GEMINI_API_KEY[:20]}...")
-genai.configure(api_key=GEMINI_API_KEY)
+
+# Initialize client with API key
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+# Define case scenarios with names
+case_scenarios = {
+    'murder': {
+        'title': 'The Mystery of the Missing Necklace',
+        'topic': 'During a family festival, Grandma\'s gold necklace vanished. Aryan and Rohan were near the room.',
+        'personA_name': 'Aryan',
+        'personB_name': 'Rohan',
+        'guilty': 'Rohan',
+        'reason': 'They lied to the court about their actions',
+        'article': 'Article 21 - Right to Life and Personal Liberty'
+    },
+    'property': {
+        'title': 'The Two Brothers and Papa\'s Farm',
+        'topic': 'Brothers Vikram and Ajay fight over their late father\'s farm. Vikram wants more land, Ajay has letters.',
+        'personA_name': 'Vikram',
+        'personB_name': 'Ajay',
+        'guilty': 'Vikram',
+        'reason': 'They tried to take something that wasn\'t theirs',
+        'article': 'Article 14 - Right to Equality'
+    }
+}
 
 @app.route('/generate', methods=['POST'])
 def generate_case():
@@ -34,168 +60,153 @@ def generate_case():
         if not case_type:
             return jsonify({'error': 'Missing caseType parameter'}), 400
 
-        # Define conflict resolution scenarios
-        case_scenarios = {
-            'property': {
-                'title': 'The Garden Sharing Story',
-                'topic': 'Two neighbors Ravi and Meena both want to use the same garden space. Ravi says his family has been planting flowers there for many years. Meena found old papers showing the land might be hers. They both respect each other and want a peaceful solution that makes everyone happy.'
-            },
-            'investigation': {
-                'title': 'The School Library Conflict',
-                'topic': 'A student forgot to return an important school book. Another student needs it urgently for a project. The librarian wants to help both students. They need to find a fair way to share resources and be responsible. This is about learning cooperation and honesty.'
-            }
-        }
-
         if case_type not in case_scenarios:
-            return jsonify({'error': 'Invalid case type. Use "property" or "investigation"'}), 400
+            return jsonify({'error': 'Invalid case type. Use "murder" or "property"'}), 400
 
         scenario = case_scenarios[case_type]
         
-        # Create prompt for Gemini - use SAFE conflict resolution language
-        prompt = f"""Generate a child-friendly conflict resolution story for educational purposes about Indian Constitution values.
+        # Ultra-compact prompt
+        prompt = f"""Create educational courtroom story JSON for kids (10-14) about {scenario['topic']}
 
-This is NOT about legal judgement, NOT about crime, NOT about guilt, and NOT real legal guidance.
-This is a POSITIVE learning story about values, cooperation, and peaceful problem-solving.
+Return ONLY this JSON structure (no markdown, no extra text):
 
-Topic: {scenario['topic']}
+{{"caseTitle":"{scenario['title']}","summary":"Brief 2-sentence summary","personA_name":"{scenario['personA_name']}","personB_name":"{scenario['personB_name']}","personA_dialogues":["Short statement 1","Short statement 2","Short statement 3","Short statement 4","Short statement 5"],"personB_dialogues":["Short statement 1","Short statement 2","Short statement 3 with clue","Short statement 4","Short statement 5"],"mcq":{{"guilty":["{scenario['personA_name']}","{scenario['personB_name']}","Both are guilty","No one is guilty"],"reason":["They lied to the court about their actions","They tried to take something that wasn't theirs","They broke a family promise or trust","They disrespected elders or fairness"],"article":["Article 14 - Right to Equality","Article 19 - Right to Freedom","Article 21 - Right to Life and Personal Liberty","Article 39 - Principles of Policy for Fair Distribution"]}},"correctAnswers":{{"guilty":"{scenario['guilty']}","reason":"{scenario['reason']}","article":"{scenario['article']}"}},"verdict_explanation":"2 sentences explaining verdict positively","judge_tip":"Short wise tip about honesty"}}
 
-Create a JSON object with this EXACT structure (return ONLY JSON, no markdown, no extra text):
+Rules: Keep dialogues SHORT (max 15 words each). Make {scenario['guilty']} guilty through subtle clues. Kid-friendly tone."""
 
-{{
-  "caseTitle": "{scenario['title']}",
-  "summary": "Brief 2-3 sentence positive explanation of the situation",
-  "personA_name": "Name of first person",
-  "personB_name": "Name of second person",
-  "personA_dialogues": [
-    "Simple dialogue 1 from Person A (1-2 sentences, friendly tone)",
-    "Simple dialogue 2 from Person A",
-    "Simple dialogue 3 from Person A",
-    "Simple dialogue 4 from Person A",
-    "Simple dialogue 5 from Person A"
-  ],
-  "personB_dialogues": [
-    "Simple dialogue 1 from Person B (1-2 sentences, friendly tone)",
-    "Simple dialogue 2 from Person B",
-    "Simple dialogue 3 from Person B",
-    "Simple dialogue 4 from Person B",
-    "Simple dialogue 5 from Person B"
-  ],
-  "mcq": {{
-    "who_needs_to_improve": ["Person A name", "Person B name", "Both need to cooperate", "Both handled it well"],
-    "reason": ["Positive reason option 1", "Positive reason option 2", "Positive reason option 3", "Positive reason option 4"],
-    "learning_point": [
-      "Right to Equality - Article 14",
-      "Right to Freedom - Article 19",
-      "Right against Exploitation - Article 23",
-      "Right to Constitutional Remedies - Article 32"
-    ]
-  }},
-  "correctAnswers": {{
-    "who_needs_to_improve": "Pick one option from the first MCQ",
-    "reason": "Pick one option from reason MCQ",
-    "learning_point": "Pick one Article from learning_point options"
-  }},
-  "positive_resolution": "Explain a constructive, peaceful way to solve this situation in 2-3 simple sentences"
-}}
+        # Safety settings - allow fictional content
+        safety_settings = [
+            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE")
+        ]
 
-IMPORTANT RULES:
-- Keep everything educational, positive, and friendly
-- NO words like: guilty, crime, punishment, verdict, judge, blame
-- Use words like: cooperation, understanding, improvement, learning, peaceful resolution
-- Focus on moral values and constitutional learning
-- Each dialogue should be simple and constructive (1-2 sentences)
-- Make all options positive and educational
-- Return ONLY the JSON object, nothing else"""
+        # Generate content with retry logic
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        safety_settings=safety_settings,
+                        temperature=0.6,
+                        top_p=0.9,
+                        max_output_tokens=3000,
+                    )
+                )
 
-        # Call Gemini API with relaxed safety settings for educational content
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        
-        # Use the most permissive safety settings for educational content
-        from google.generativeai.types import HarmCategory, HarmBlockThreshold
-        
-        safety_settings = {
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        }
-        
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.7,
-                top_p=0.95,
-                max_output_tokens=2048,
-            ),
-            safety_settings=safety_settings
-        )
+                # Check if response was blocked
+                if not response.candidates or len(response.candidates) == 0:
+                    print(f"⚠️ Attempt {attempt + 1}: No candidates returned")
+                    if attempt == max_retries - 1:
+                        return jsonify({
+                            'error': 'Content generation blocked. Please try again.',
+                            'blocked': True
+                        }), 400
+                    continue
 
-        # Check if response was blocked
-        if not response.candidates:
-            return jsonify({
-                'error': 'Content generation was blocked by safety filters. Please try again.',
-                'blocked': True
-            }), 400
-            
-        # Check finish reason
-        finish_reason = response.candidates[0].finish_reason
-        if finish_reason != 1:  # 1 = STOP (normal completion)
-            print(f"⚠️ Finish reason: {finish_reason}")
-            if finish_reason == 2:  # SAFETY
-                return jsonify({
-                    'error': 'Content blocked by safety filters. This is an educational simulation.',
-                    'finish_reason': 'SAFETY'
-                }), 400
-            elif finish_reason == 3:  # RECITATION
-                return jsonify({
-                    'error': 'Content blocked due to recitation. Please try again.',
-                    'finish_reason': 'RECITATION'
-                }), 400
+                candidate = response.candidates[0]
+                finish_reason = str(candidate.finish_reason)
+                
+                print(f"✅ Attempt {attempt + 1}: Finish reason = {finish_reason}")
 
-        # Extract text from response
-        response_text = response.text.strip()
-        
-        # Remove markdown code blocks if present
-        if response_text.startswith('```json'):
-            response_text = response_text.replace('```json', '').replace('```', '').strip()
-        elif response_text.startswith('```'):
-            response_text = response_text.replace('```', '').strip()
+                # Check finish reason
+                if "SAFETY" in finish_reason:
+                    print(f"⚠️ Attempt {attempt + 1}: Blocked by safety filters")
+                    if attempt == max_retries - 1:
+                        return jsonify({
+                            'error': 'Safety filters triggered. This is educational fiction. Please try again.',
+                            'finish_reason': 'SAFETY'
+                        }), 400
+                    continue
 
-        # Try to find JSON in the response
-        json_match = re.search(r'\{[\s\S]*\}', response_text)
-        if json_match:
-            response_text = json_match.group(0)
+                # Extract text - handle None case
+                if not hasattr(candidate.content, 'parts') or not candidate.content.parts:
+                    print(f"⚠️ Attempt {attempt + 1}: No content parts")
+                    if attempt == max_retries - 1:
+                        return jsonify({'error': 'Empty response from model'}), 500
+                    continue
 
-        # Parse JSON
-        try:
-            case_data = json.loads(response_text)
-        except json.JSONDecodeError as e:
-            print(f"JSON Parse Error: {e}")
-            print(f"Response was: {response_text}")
-            return jsonify({
-                'error': 'Failed to parse model response',
-                'raw_response': response_text[:500]
-            }), 500
+                response_text = ""
+                for part in candidate.content.parts:
+                    if hasattr(part, 'text') and part.text:
+                        response_text += part.text
 
-        # Validate required fields
-        required_fields = ['summary', 'personA_dialogues', 'personB_dialogues', 'mcq', 'correctAnswers', 'positive_resolution']
-        for field in required_fields:
-            if field not in case_data:
-                return jsonify({'error': f'Missing required field: {field}'}), 500
+                if not response_text:
+                    print(f"⚠️ Attempt {attempt + 1}: Empty text")
+                    if attempt == max_retries - 1:
+                        return jsonify({'error': 'Empty response text'}), 500
+                    continue
 
-        return jsonify(case_data), 200
+                response_text = response_text.strip()
+                print(f"📝 Response length: {len(response_text)} chars")
+
+                # Clean markdown if present
+                if '```json' in response_text:
+                    response_text = response_text.split('```json')[1].split('```')[0].strip()
+                elif '```' in response_text:
+                    response_text = response_text.split('```')[1].split('```')[0].strip()
+
+                # Extract JSON
+                json_match = re.search(r'\{[\s\S]*\}', response_text)
+                if not json_match:
+                    print(f"⚠️ Attempt {attempt + 1}: No JSON found in response")
+                    print(f"Response preview: {response_text[:300]}")
+                    if attempt == max_retries - 1:
+                        return jsonify({'error': 'Failed to extract JSON from response'}), 500
+                    continue
+
+                # Parse JSON
+                try:
+                    case_data = json.loads(json_match.group(0))
+                except json.JSONDecodeError as e:
+                    print(f"⚠️ Attempt {attempt + 1}: JSON parse error: {e}")
+                    print(f"JSON preview: {json_match.group(0)[:300]}")
+                    if attempt == max_retries - 1:
+                        return jsonify({'error': 'Invalid JSON format from model'}), 500
+                    continue
+
+                # Validate required fields
+                required = ['summary', 'personA_dialogues', 'personB_dialogues', 'mcq', 'correctAnswers', 'verdict_explanation', 'judge_tip']
+                missing = [f for f in required if f not in case_data]
+                if missing:
+                    print(f"⚠️ Attempt {attempt + 1}: Missing fields: {missing}")
+                    if attempt == max_retries - 1:
+                        return jsonify({'error': f'Missing required fields: {missing}'}), 500
+                    continue
+
+                # Validate dialogues length
+                if len(case_data.get('personA_dialogues', [])) != 5 or len(case_data.get('personB_dialogues', [])) != 5:
+                    print(f"⚠️ Attempt {attempt + 1}: Invalid dialogue count")
+                    if attempt == max_retries - 1:
+                        return jsonify({'error': 'Invalid number of dialogues'}), 500
+                    continue
+
+                # Success!
+                print(f"✅ Successfully generated case on attempt {attempt + 1}")
+                return jsonify(case_data), 200
+
+            except Exception as inner_e:
+                print(f"⚠️ Attempt {attempt + 1} error: {str(inner_e)}")
+                if attempt == max_retries - 1:
+                    raise
+
+        # If we get here, all retries failed
+        return jsonify({'error': 'Failed after multiple attempts. Please try again.'}), 500
 
     except Exception as e:
-        print(f"Error in generate_case: {str(e)}")
+        print(f"❌ Error in generate_case: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'ok', 'service': 'Courtroom Simulator'}), 200
+    return jsonify({'status': 'ok', 'service': 'Junior Judge Courtroom - Ready for Justice!'}), 200
 
 if __name__ == '__main__':
-    print("🏛️ Courtroom Simulator Backend Starting...")
+    print("🏛️ Junior Judge Courtroom Backend Starting...")
     print(f"📡 Server running on http://localhost:5005")
     app.run(host='0.0.0.0', port=5005, debug=True)

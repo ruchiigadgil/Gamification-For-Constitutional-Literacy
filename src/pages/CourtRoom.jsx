@@ -4,13 +4,13 @@ function CourtRoom() {
   const [selectedCase, setSelectedCase] = useState("");
   const [loading, setLoading] = useState(false);
   const [caseData, setCaseData] = useState(null);
-  const [answers, setAnswers] = useState({ who_needs_to_improve: "", reason: "", learning_point: "" });
+  const [answers, setAnswers] = useState({ guilty: "", reason: "", article: "" });
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
   const cases = [
-    { id: 'property', title: '🌻 Garden Sharing Story', desc: 'Two neighbors learning to share garden space peacefully' },
-    { id: 'investigation', title: '📚 Library Book Conflict', desc: 'Students learning about sharing and responsibility' }
+    { id: 'murder', title: 'The Missing Necklace Mystery', desc: 'Who stole Grandma\'s precious gold necklace?' },
+    { id: 'property', title: 'The Two Brothers & Papa\'s Farm', desc: 'A fight over family land after their father passed away' }
   ];
 
   const generateCase = async () => {
@@ -22,7 +22,7 @@ function CourtRoom() {
     setError("");
     setResult(null);
     setCaseData(null);
-    setAnswers({ who_needs_to_improve: "", reason: "", learning_point: "" });
+    setAnswers({ guilty: "", reason: "", article: "" });
     setLoading(true);
 
     try {
@@ -33,69 +33,58 @@ function CourtRoom() {
       });
 
       const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to load case");
 
-      if (!res.ok) {
-        setError(json.error || "Failed to generate case");
-      } else {
-        setCaseData(json);
-      }
+      setCaseData(json);
     } catch (e) {
-      setError("Network error: " + e.message);
+      setError("Connection error: " + e.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const selectAnswer = (key, value) => {
-    setAnswers(prev => ({ ...prev, [key]: value }));
-  };
-
-  const submitAnswers = () => {
-    if (!caseData) return;
-
-    const { who_needs_to_improve, reason, learning_point } = answers;
-    if (!who_needs_to_improve || !reason || !learning_point) {
-      setError("Please answer all questions!");
-      console.log("Missing answers:", { who_needs_to_improve, reason, learning_point });
+  const submitVerdict = () => {
+    if (!answers.guilty || !answers.reason || !answers.article) {
+      setError("Please answer all three questions, Your Honor!");
       return;
     }
 
-    setError(""); // Clear any previous errors
-    const correct = caseData.correctAnswers || {};
+    setError("");
+    const correct = caseData.correctAnswers;
     const score =
-      (answers.who_needs_to_improve === correct.who_needs_to_improve ? 1 : 0) +
+      (answers.guilty === correct.guilty ? 1 : 0) +
       (answers.reason === correct.reason ? 1 : 0) +
-      (answers.learning_point === correct.learning_point ? 1 : 0);
+      (answers.article === correct.article ? 1 : 0);
 
     setResult({
       score,
       total: 3,
       success: score === 3,
-      message: score === 3 ? "🎉 Perfect! You understood the conflict resolution completely!" : 
-               score === 2 ? "👏 Good job! You got most of it right." :
-               score === 1 ? "💪 Nice try! Review the situation again." :
-               "📚 Keep learning! Read the peaceful resolution below.",
-      resolution: caseData.positive_resolution || ""
+      message: score === 3
+        ? "Perfect Verdict, Your Honor!"
+        : score === 2
+        ? "Very Close! Great Judgment!"
+        : "Good Try! Justice takes practice."
     });
   };
 
   const resetCase = () => {
     setCaseData(null);
-    setAnswers({ who_needs_to_improve: "", reason: "", learning_point: "" });
     setResult(null);
+    setAnswers({ guilty: "", reason: "", article: "" });
     setError("");
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>🤝 Junior Mediator - Conflict Resolution Learning</h1>
-        <p style={styles.subtitle}>Learn law by solving real-life cases!</p>
+        <h1 style={styles.title}>Junior Judge Courtroom</h1>
+        <p style={styles.subtitle}>Solve real-life inspired mysteries • Deliver justice • Learn Indian Constitution!</p>
       </div>
 
       {!caseData ? (
         <div style={styles.caseSelection}>
-          <h2 style={styles.sectionTitle}>Select a Case to Solve</h2>
+          <h2 style={styles.sectionTitle}>Choose Your Case</h2>
           
           <div style={styles.caseGrid}>
             {cases.map(c => (
@@ -109,9 +98,7 @@ function CourtRoom() {
               >
                 <h3 style={styles.caseTitle}>{c.title}</h3>
                 <p style={styles.caseDesc}>{c.desc}</p>
-                {selectedCase === c.id && (
-                  <div style={styles.selectedBadge}>✓ Selected</div>
-                )}
+                {selectedCase === c.id && <div style={styles.selectedBadge}>Selected</div>}
               </div>
             ))}
           </div>
@@ -125,7 +112,7 @@ function CourtRoom() {
               ...(loading || !selectedCase ? styles.buttonDisabled : {})
             }}
           >
-            {loading ? "⏳ Generating Case..." : "🎯 Generate Case"}
+            {loading ? "Loading Court Case..." : "Start Trial"}
           </button>
 
           {error && <div style={styles.error}>{error}</div>}
@@ -133,25 +120,23 @@ function CourtRoom() {
       ) : (
         <div style={styles.caseView}>
           <div style={styles.caseHeader}>
-            <h2 style={styles.caseViewTitle}>{caseData.caseTitle || "Case Details"}</h2>
+            <h2 style={styles.caseViewTitle}>{caseData.caseTitle}</h2>
             <button onClick={resetCase} style={styles.resetButton}>
-              ← Back to Cases
+              Back to Cases
             </button>
           </div>
 
           <div style={styles.summaryBox}>
-            <h3 style={styles.summaryTitle}>📋 Case Summary</h3>
+            <h3 style={styles.summaryTitle}>Case Summary</h3>
             <p style={styles.summaryText}>{caseData.summary}</p>
           </div>
 
           <div style={styles.dialoguesSection}>
-            <h3 style={styles.sectionTitle}>👥 Court Statements</h3>
+            <h3 style={styles.sectionTitle}>Witness Statements in Court</h3>
             
             <div style={styles.dialoguesGrid}>
               <div style={styles.personColumn}>
-                <h4 style={styles.personName}>
-                  {caseData.personA_name || "Person A"}
-                </h4>
+                <h4 style={styles.personName}>{caseData.personA_name}</h4>
                 {caseData.personA_dialogues?.map((d, i) => (
                   <div key={i} style={styles.dialogueBoxA}>
                     <span style={styles.dialogueNumber}>#{i + 1}</span>
@@ -161,9 +146,7 @@ function CourtRoom() {
               </div>
 
               <div style={styles.personColumn}>
-                <h4 style={styles.personName}>
-                  {caseData.personB_name || "Person B"}
-                </h4>
+                <h4 style={styles.personName}>{caseData.personB_name}</h4>
                 {caseData.personB_dialogues?.map((d, i) => (
                   <div key={i} style={styles.dialogueBoxB}>
                     <span style={styles.dialogueNumber}>#{i + 1}</span>
@@ -175,18 +158,18 @@ function CourtRoom() {
           </div>
 
           <div style={styles.questionsSection}>
-            <h3 style={styles.sectionTitle}>🧠 Help Resolve This Situation</h3>
+            <h3 style={styles.sectionTitle}>Deliver Your Verdict</h3>
 
             <div style={styles.questionGroup}>
-              <label style={styles.questionLabel}>1. Who needs to improve their behavior?</label>
+              <label style={styles.questionLabel}>1. Who is guilty?</label>
               <div style={styles.optionsContainer}>
-                {caseData.mcq?.who_needs_to_improve?.map((opt, i) => (
+                {caseData.mcq?.guilty?.map((opt, i) => (
                   <label key={i} style={styles.option}>
                     <input
                       type="radio"
                       name="guilty"
                       checked={answers.guilty === opt}
-                      onChange={() => selectAnswer("guilty", opt)}
+                      onChange={() => setAnswers(prev => ({ ...prev, guilty: opt }))}
                       style={styles.radio}
                     />
                     <span style={styles.optionText}>{opt}</span>
@@ -195,16 +178,16 @@ function CourtRoom() {
               </div>
             </div>
 
-            <div style={styles.question}>
-              <label style={styles.questionLabel}>2. What is the reason?</label>
-              <div style={styles.optionsGrid}>
+            <div style={styles.questionGroup}>
+              <label style={styles.questionLabel}>2. What was their mistake?</label>
+              <div style={styles.optionsContainer}>
                 {caseData.mcq?.reason?.map((opt, i) => (
                   <label key={i} style={styles.option}>
                     <input
                       type="radio"
                       name="reason"
                       checked={answers.reason === opt}
-                      onChange={() => selectAnswer("reason", opt)}
+                      onChange={() => setAnswers(prev => ({ ...prev, reason: opt }))}
                       style={styles.radio}
                     />
                     <span style={styles.optionText}>{opt}</span>
@@ -213,16 +196,16 @@ function CourtRoom() {
               </div>
             </div>
 
-            <div style={styles.question}>
-              <label style={styles.questionLabel}>3. What Constitutional value does this teach?</label>
-              <div style={styles.optionsGrid}>
-                {caseData.mcq?.learning_point?.map((opt, i) => (
+            <div style={styles.questionGroup}>
+              <label style={styles.questionLabel}>3. Which Constitutional Right was affected?</label>
+              <div style={styles.optionsContainer}>
+                {caseData.mcq?.article?.map((opt, i) => (
                   <label key={i} style={styles.option}>
                     <input
                       type="radio"
-                      name="learning_point"
-                      checked={answers.learning_point === opt}
-                      onChange={() => selectAnswer("learning_point", opt)}
+                      name="article"
+                      checked={answers.article === opt}
+                      onChange={() => setAnswers(prev => ({ ...prev, article: opt }))}
                       style={styles.radio}
                     />
                     <span style={styles.optionText}>{opt}</span>
@@ -232,10 +215,10 @@ function CourtRoom() {
             </div>
 
             <button
-              onClick={submitAnswers}
+              onClick={submitVerdict}
               style={{...styles.button, ...styles.verdictButton}}
             >
-              ✅ Submit My Resolution
+              Deliver Final Verdict
             </button>
 
             {error && <div style={styles.error}>{error}</div>}
@@ -247,32 +230,33 @@ function CourtRoom() {
               ...(result.success ? styles.resultSuccess : styles.resultPartial)
             }}>
               <h3 style={styles.resultTitle}>
-                {result.success ? "🎉 Perfect Understanding!" : "📊 Your Learning Result"}
+                {result.success ? "Perfect Verdict!" : "Verdict Delivered"}
               </h3>
               
               <p style={styles.resultMessage}>{result.message}</p>
-              
               <p style={styles.resultScore}>
                 Score: <strong>{result.score}/{result.total}</strong>
-                {result.success && " - Excellent work, Mediator!"}
               </p>
 
               <div style={styles.explanationBox}>
-                <h4 style={styles.explanationTitle}>🌿 Peaceful Resolution</h4>
-                <p style={styles.explanationText}>{result.resolution}</p>
+                <h4 style={styles.explanationTitle}>Truth Revealed by the Court</h4>
+                <p style={styles.explanationText}>{caseData.verdict_explanation}</p>
+                <p style={{...styles.explanationText, marginTop: '15px', fontStyle: 'italic'}}>
+                  <strong>Judge’s Wisdom:</strong> {caseData.judge_tip}
+                </p>
               </div>
 
               <div style={styles.correctAnswersBox}>
-                <h4 style={styles.correctAnswersTitle}>✅ Correct Answers:</h4>
+                <h4 style={styles.correctAnswersTitle}>Correct Answers:</h4>
                 <ul style={styles.correctAnswersList}>
-                  <li><strong>Who needs to improve:</strong> {caseData.correctAnswers.who_needs_to_improve}</li>
+                  <li><strong>Guilty:</strong> {caseData.correctAnswers.guilty}</li>
                   <li><strong>Reason:</strong> {caseData.correctAnswers.reason}</li>
-                  <li><strong>Learning Point:</strong> {caseData.correctAnswers.learning_point}</li>
+                  <li><strong>Article:</strong> {caseData.correctAnswers.article}</li>
                 </ul>
               </div>
 
               <button onClick={resetCase} style={{...styles.button, ...styles.newCaseButton}}>
-                🔄 Try Another Case
+                Try Another Case
               </button>
             </div>
           )}
@@ -287,86 +271,90 @@ const styles = {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
     padding: '20px',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    color: 'white'
   },
   header: {
     textAlign: 'center',
-    color: 'white',
-    marginBottom: '40px'
+    marginBottom: '40px',
+    paddingTop: '20px'
   },
   title: {
-    fontSize: '2.5rem',
+    fontSize: '3rem',
     fontWeight: 'bold',
     margin: '0 0 10px 0',
-    textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+    textShadow: '3px 3px 6px rgba(0,0,0,0.4)',
+    background: 'linear-gradient(45deg, #ffd700, #ffed4e)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent'
   },
   subtitle: {
-    fontSize: '1.1rem',
-    opacity: 0.9,
-    margin: 0
+    fontSize: '1.3rem',
+    opacity: 0.9
   },
   caseSelection: {
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '0 auto',
     background: 'white',
-    borderRadius: '16px',
+    borderRadius: '20px',
     padding: '40px',
-    boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+    boxShadow: '0 15px 50px rgba(0,0,0,0.3)',
+    color: '#333'
   },
   sectionTitle: {
-    fontSize: '1.5rem',
+    fontSize: '1.8rem',
     color: '#1e3c72',
-    marginBottom: '20px',
-    textAlign: 'center'
+    textAlign: 'center',
+    marginBottom: '30px'
   },
   caseGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '20px',
-    marginBottom: '30px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: '25px',
+    marginBottom: '40px'
   },
   caseCard: {
-    padding: '25px',
-    border: '2px solid #ddd',
-    borderRadius: '12px',
+    padding: '30px',
+    border: '3px solid #e0e0e0',
+    borderRadius: '16px',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
+    transition: 'all 0.4s ease',
+    background: 'white',
     position: 'relative',
-    background: 'white'
+    boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
   },
   caseCardSelected: {
     borderColor: '#2a5298',
     background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-    transform: 'scale(1.02)',
-    boxShadow: '0 8px 20px rgba(42, 82, 152, 0.3)'
+    transform: 'translateY(-10px)',
+    boxShadow: '0 15px 30px rgba(42, 82, 152, 0.4)'
   },
   caseTitle: {
-    fontSize: '1.2rem',
+    fontSize: '1.4rem',
     color: '#1e3c72',
-    marginBottom: '10px'
+    marginBottom: '12px'
   },
   caseDesc: {
-    color: '#666',
-    fontSize: '0.95rem',
-    margin: 0
+    color: '#555',
+    lineHeight: '1.5'
   },
   selectedBadge: {
     position: 'absolute',
-    top: '10px',
-    right: '10px',
+    top: '15px',
+    right: '15px',
     background: '#4caf50',
     color: 'white',
-    padding: '4px 12px',
-    borderRadius: '12px',
-    fontSize: '0.85rem',
-    fontWeight: 'bold'
+    padding: '8px 16px',
+    borderRadius: '20px',
+    fontWeight: 'bold',
+    fontSize: '0.9rem'
   },
   button: {
-    padding: '14px 30px',
-    fontSize: '1rem',
-    fontWeight: '600',
+    padding: '16px 40px',
+    fontSize: '1.2rem',
+    fontWeight: 'bold',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '12px',
     cursor: 'pointer',
     transition: 'all 0.3s ease'
   },
@@ -374,223 +362,227 @@ const styles = {
     background: 'linear-gradient(135deg, #2a5298, #1e3c72)',
     color: 'white',
     width: '100%',
-    boxShadow: '0 4px 15px rgba(42, 82, 152, 0.4)'
+    boxShadow: '0 6px 20px rgba(42, 82, 152, 0.5)'
   },
   buttonDisabled: {
     opacity: 0.6,
     cursor: 'not-allowed'
   },
   error: {
-    marginTop: '15px',
-    padding: '12px',
+    marginTop: '20px',
+    padding: '15px',
     background: '#ffebee',
     color: '#c62828',
-    borderRadius: '8px',
-    textAlign: 'center'
+    borderRadius: '10px',
+    textAlign: 'center',
+    fontWeight: 'bold'
   },
   caseView: {
-    maxWidth: '1100px',
+    maxWidth: '1200px',
     margin: '0 auto',
     background: 'white',
-    borderRadius: '16px',
-    padding: '30px',
-    boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+    borderRadius: '20px',
+    padding: '40px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    color: '#333'
   },
   caseHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '25px',
+    marginBottom: '30px',
     flexWrap: 'wrap',
     gap: '15px'
   },
   caseViewTitle: {
-    fontSize: '1.8rem',
+    fontSize: '2.2rem',
     color: '#1e3c72',
     margin: 0
   },
   resetButton: {
-    padding: '10px 20px',
-    background: '#f5f5f5',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontWeight: '600',
-    color: '#1e3c72'
+    padding: '12px 25px',
+    background: '#f0f0f0',
+    border: '2px solid #ddd',
+    borderRadius: '10px',
+    fontWeight: 'bold',
+    cursor: 'pointer'
   },
   summaryBox: {
-    background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-    padding: '20px',
-    borderRadius: '12px',
-    marginBottom: '30px',
-    border: '2px solid #ffb74d'
+    background: 'linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)',
+    padding: '25px',
+    borderRadius: '15px',
+    marginBottom: '35px',
+    border: '3px solid #ffb300'
   },
   summaryTitle: {
-    fontSize: '1.2rem',
     color: '#e65100',
-    marginBottom: '10px'
+    fontSize: '1.4rem',
+    marginBottom: '12px'
   },
   summaryText: {
-    fontSize: '1rem',
-    color: '#333',
-    lineHeight: '1.6',
-    margin: 0
+    fontSize: '1.1rem',
+    lineHeight: '1.7',
+    color: '#444'
   },
   dialoguesSection: {
-    marginBottom: '30px'
+    marginBottom: '40px'
   },
   dialoguesGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '20px'
+    gap: '30px'
   },
   personColumn: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px'
+    gap: '15px'
   },
   personName: {
-    fontSize: '1.2rem',
+    fontSize: '1.5rem',
     fontWeight: 'bold',
     color: '#1e3c72',
-    marginBottom: '5px',
-    textAlign: 'center'
+    textAlign: 'center',
+    marginBottom: '10px'
   },
   dialogueBoxA: {
     background: 'linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%)',
-    padding: '15px',
-    borderRadius: '10px',
-    borderLeft: '4px solid #3f51b5',
+    padding: '18px',
+    borderRadius: '15px',
+    borderLeft: '6px solid #3f51b5',
     position: 'relative'
   },
   dialogueBoxB: {
     background: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
-    padding: '15px',
-    borderRadius: '10px',
-    borderLeft: '4px solid #e91e63',
+    padding: '18px',
+    borderRadius: '15px',
+    borderLeft: '6px solid #e91e63',
     position: 'relative'
   },
   dialogueNumber: {
-    fontSize: '0.75rem',
     fontWeight: 'bold',
     color: '#666',
-    marginBottom: '5px',
+    marginBottom: '8px',
     display: 'block'
   },
   dialogueText: {
-    fontSize: '0.95rem',
-    color: '#333',
     margin: 0,
-    lineHeight: '1.5'
+    lineHeight: '1.6',
+    fontSize: '1.02rem'
   },
   questionsSection: {
-    background: '#f5f5f5',
-    padding: '25px',
-    borderRadius: '12px',
-    marginBottom: '20px'
+    background: '#f8f9fa',
+    padding: '35px',
+    borderRadius: '15px',
+    marginBottom: '30px'
   },
-  question: {
-    marginBottom: '25px'
+  questionGroup: {
+    marginBottom: '30px'
   },
   questionLabel: {
-    display: 'block',
-    fontSize: '1.1rem',
-    fontWeight: '600',
+    fontSize: '1.3rem',
+    fontWeight: 'bold',
     color: '#1e3c72',
-    marginBottom: '12px'
+    marginBottom: '15px',
+    display: 'block'
   },
-  optionsGrid: {
+  optionsContainer: {
     display: 'grid',
-    gap: '10px'
+    gap: '12px'
   },
   option: {
     display: 'flex',
     alignItems: 'center',
-    padding: '12px 15px',
+    padding: '14px 18px',
     background: 'white',
     border: '2px solid #ddd',
-    borderRadius: '8px',
+    borderRadius: '10px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease'
+    transition: '0.3s'
   },
   radio: {
-    marginRight: '10px',
-    cursor: 'pointer',
-    width: '18px',
-    height: '18px'
+    marginRight: '15px',
+    width: '20px',
+    height: '20px',
+    cursor: 'pointer'
   },
   optionText: {
-    fontSize: '0.95rem',
+    fontSize: '1.05rem',
     color: '#333'
   },
   verdictButton: {
-    background: 'linear-gradient(135deg, #4caf50, #388e3c)',
+    background: 'linear-gradient(135deg, #d32f2f, #b71c1c)',
     color: 'white',
     width: '100%',
-    marginTop: '10px',
-    boxShadow: '0 4px 15px rgba(76, 175, 80, 0.4)'
+    padding: '18px',
+    fontSize: '1.4rem',
+    boxShadow: '0 8px 25px rgba(211, 47, 47, 0.4)'
   },
   resultBox: {
-    padding: '25px',
-    borderRadius: '12px',
-    marginTop: '25px'
+    padding: '35px',
+    borderRadius: '15px',
+    marginTop: '30px',
+    textAlign: 'center'
   },
   resultSuccess: {
     background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-    border: '2px solid #4caf50'
+    border: '4px solid #4caf50'
   },
   resultPartial: {
     background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-    border: '2px solid #ff9800'
+    border: '4px solid #ff9800'
   },
   resultTitle: {
-    fontSize: '1.5rem',
+    fontSize: '2rem',
     color: '#1e3c72',
     marginBottom: '15px'
   },
+  resultMessage: {
+    fontSize: '1.4rem',
+    marginBottom: '10px'
+  },
   resultScore: {
-    fontSize: '1.2rem',
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
     color: '#333',
-    marginBottom: '20px'
+    marginBottom: '25px'
   },
   explanationBox: {
     background: 'white',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '20px'
+    padding: '25px',
+    borderRadius: '12px',
+    margin: '20px 0',
+    textAlign: 'left'
   },
   explanationTitle: {
-    fontSize: '1.1rem',
-    color: '#1e3c72',
-    marginBottom: '10px'
+    color: '#d32f2f',
+    fontSize: '1.4rem',
+    marginBottom: '12px'
   },
   explanationText: {
-    fontSize: '1rem',
-    color: '#555',
-    lineHeight: '1.6',
-    margin: 0
+    fontSize: '1.1rem',
+    lineHeight: '1.7',
+    color: '#333'
   },
   correctAnswersBox: {
-    background: 'white',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '20px'
+    background: '#f0f0f0',
+    padding: '20px',
+    borderRadius: '12px',
+    margin: '20px 0'
   },
   correctAnswersTitle: {
-    fontSize: '1.1rem',
-    color: '#1e3c72',
+    color: '#d32f2f',
     marginBottom: '10px'
   },
   correctAnswersList: {
-    margin: 0,
-    paddingLeft: '20px',
+    textAlign: 'left',
     color: '#333'
   },
   newCaseButton: {
     background: 'linear-gradient(135deg, #2a5298, #1e3c72)',
     color: 'white',
-    width: '100%',
-    boxShadow: '0 4px 15px rgba(42, 82, 152, 0.4)'
+    padding: '16px 40px',
+    fontSize: '1.2rem',
+    marginTop: '20px'
   }
 };
 
