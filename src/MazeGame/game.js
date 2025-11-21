@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { updateUserXP } from '../services/api';
 import Maze from './Maze';
 import Trivia from './Trivia';
 import Modal from './Modal';
@@ -187,6 +188,38 @@ const Game = () => {
     }
   };
 
+  // When the player wins, persist the earned score to server once
+  const reportedRef = useRef(false);
+  useEffect(() => {
+    const sendScore = async () => {
+      if (gameState === 'won' && score > 0 && !reportedRef.current) {
+        reportedRef.current = true;
+        try {
+          // send the earned score as delta to be $inc'd on server
+          await updateUserXP(score);
+          console.debug('Maze: reported score', score);
+        } catch (err) {
+          console.error('Error reporting maze score', err);
+        }
+      }
+    };
+    sendScore();
+  }, [gameState, score]);
+
+  const handleBackToDashboard = async () => {
+    try {
+      if (!reportedRef.current && score > 0) {
+        reportedRef.current = true;
+        await updateUserXP(score);
+      }
+    } catch (err) {
+      console.error('Error reporting maze score on back', err);
+    } finally {
+      // navigate back to dashboard
+      window.location.href = '/dashboard';
+    }
+  };
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleKey = (e) => {
@@ -209,8 +242,23 @@ const Game = () => {
       <div className="maze-game-content">
         <div className="maze-header">
           <h1 className="maze-title">Law Maze Challenge</h1>
+          <button
+            onClick={handleBackToDashboard}
+            style={{
+              marginLeft: 12,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              background: '#667eea',
+              color: 'white',
+              fontWeight: 700
+            }}
+          >
+            ← Back to Dashboard
+          </button>
           <div className="maze-score">
-            <span className="score-label">Score:</span>
+            <span className="score-label">Coins🪙</span>
             <span className="score-value">{score}</span>
           </div>
         </div>

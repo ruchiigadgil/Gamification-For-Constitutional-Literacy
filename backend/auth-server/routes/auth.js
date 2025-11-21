@@ -302,4 +302,60 @@ router.post('/complete-daily', async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/update-score
+// @desc    Update user's xp/score by delta (requires auth)
+// @access  Protected
+router.post('/update-score', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { delta } = req.body;
+    if (typeof delta !== 'number') {
+      return res.status(400).json({ success: false, message: 'Invalid delta' });
+    }
+
+    // Update xp atomically
+    const user = await User.findByIdAndUpdate(
+      decoded.id,
+      { $inc: { xp: delta } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    console.log(`🔔 Updated score for ${user.email}: delta=${delta}, new xp=${user.xp}`);
+
+    res.status(200).json({ success: true, user: { id: user._id, fullName: user.fullName, email: user.email, xp: user.xp } });
+  } catch (error) {
+    console.error('Update Score Error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
+// GET /api/auth/leaderboard
+// Returns cached top-5 leaderboard from leaderboard_cache collection
+router.get('/leaderboard', async (req, res) => {
+  try {
+    // Use mongoose connection's db to access leaderboard_cache collection
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    if (!db) {
+      // DB not ready yet; return empty entries so client can retry
+      return res.status(200).json({ success: true, entries: [] });
+    }
+    const cache = await db.collection('leaderboard_cache').findOne({ _id: 'top5' });
+    const entries = (cache && cache.entries) || [];
+    res.status(200).json({ success: true, entries });
+  } catch (err) {
+    console.error('Leaderboard fetch error', err);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

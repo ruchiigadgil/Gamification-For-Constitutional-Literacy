@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { updateUserXP } from "../services/api";
 import Loading from "./Loading";
 import historical_figures from "./Data";
 
@@ -14,6 +15,7 @@ function Pictionary() {
   const [sk, setsk] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [done, setDone] = useState(false);
+  const reportedRef = useRef(false);
   const [usedLetters, setUsedLetters] = useState([]);
 
   useEffect(() => {
@@ -27,6 +29,37 @@ function Pictionary() {
       setUsedLetters([]);
     }
   }, [data, ques]);
+
+  // When the game completes, send earned xp to backend once
+  useEffect(() => {
+    const report = async () => {
+      if (done && !reportedRef.current) {
+        reportedRef.current = true;
+        try {
+          if (score !== 0) {
+            await updateUserXP(score);
+            console.debug("Pictionary: reported score", score);
+          }
+        } catch (err) {
+          console.error("Error reporting pictionary score", err);
+        }
+      }
+    };
+    report();
+  }, [done]);
+
+  const handleBackToDashboard = async () => {
+    try {
+      if (!reportedRef.current && score !== 0) {
+        reportedRef.current = true;
+        await updateUserXP(score);
+      }
+    } catch (err) {
+      console.error("Error reporting pictionary score on back", err);
+    } finally {
+      window.location.href = "/dashboard";
+    }
+  };
 
   const next = () => {
     if (ques >= data.length - 1) {
@@ -49,7 +82,8 @@ function Pictionary() {
   const hint = () => {
     if (!hintUsed) {
       // Display textual hint from Data.js instead of revealing letters
-      const h = data[ques] && data[ques].hint ? data[ques].hint : "No hint available.";
+      const h =
+        data[ques] && data[ques].hint ? data[ques].hint : "No hint available.";
       setHintText(h);
       setHintUsed(true);
     }
@@ -59,9 +93,9 @@ function Pictionary() {
 
   const word = (item) => {
     if (usedLetters.includes(item)) return;
-    
+
     setUsedLetters([...usedLetters, item]);
-    
+
     if (data[ques]["name"].toUpperCase().includes(item)) {
       let updatedHidden = hiddenWord.split("");
       data[ques]["name"].split("").forEach((char, index) => {
@@ -120,12 +154,36 @@ function Pictionary() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-       
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ flex: 1 }} />
+          <button
+            onClick={handleBackToDashboard}
+            style={{
+              marginLeft: 12,
+              padding: "8px 12px",
+              borderRadius: 8,
+              border: "none",
+              cursor: "pointer",
+              background: "#667eea",
+              color: "white",
+              fontWeight: 700,
+            }}
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
+
         <div style={styles.statsBar}>
           <div style={styles.statCard}>
             <span style={styles.statIcon}>📊</span>
             <div>
-              <p style={styles.statLabel}>Score</p>
+              <p style={styles.statLabel}>Coins🪙</p>
               <p style={styles.statValue}>{score}</p>
             </div>
           </div>
@@ -165,20 +223,22 @@ function Pictionary() {
           </div>
         </div>
 
-          {isCorrect && (
+        {isCorrect && (
           <div style={styles.correctBanner}>
             <span style={styles.correctIcon}>✨</span>
-            <span style={styles.correctText}>Perfect! Click Next to continue</span>
+            <span style={styles.correctText}>
+              Perfect! Click Next to continue
+            </span>
             <span style={styles.correctIcon}>✨</span>
           </div>
         )}
 
-          {hintUsed && hintText && (
-            <div style={styles.hintBox}>
-              <span style={styles.hintIcon}>💡</span>
-              <span style={styles.hintText}>{hintText}</span>
-            </div>
-          )}
+        {hintUsed && hintText && (
+          <div style={styles.hintBox}>
+            <span style={styles.hintIcon}>💡</span>
+            <span style={styles.hintText}>{hintText}</span>
+          </div>
+        )}
 
         <div style={styles.alphabetGrid}>
           {alphabets.map((item, index) => (
@@ -246,7 +306,8 @@ const styles = {
     minHeight: "100vh",
     background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     padding: "12px",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamily:
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   },
   header: {
     maxWidth: "880px",

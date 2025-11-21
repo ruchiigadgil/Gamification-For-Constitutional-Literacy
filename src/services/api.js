@@ -64,3 +64,62 @@ export const markDailyWordCompleted = async () => {
   }
 }
 
+/**
+ * Increment the current user's xp by delta on the server and update local snapshot.
+ * Dispatches a global 'user:update' event so other components (Dashboard) can refresh.
+ */
+export const updateUserXP = async (delta) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.log('No token found; skipping xp update');
+    return null;
+  }
+
+  // Optimistic update: update local snapshot and notify UI immediately
+  const prevUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const prevXp = typeof prevUser.xp === 'number' ? prevUser.xp : 0;
+  const optimisticUser = { ...prevUser, xp: prevXp + delta };
+  localStorage.setItem('user', JSON.stringify(optimisticUser));
+  // notify UI that update started
+  window.dispatchEvent(new CustomEvent('user:update:pending', { detail: { delta } }));
+  // Also trigger a regular user:update so components refresh
+  window.dispatchEvent(new Event('user:update'));
+
+  try {
+    const res = await fetch('/api/auth/update-score', {
+      method: 'POST',
+      headers: {
+        'Authorization': token.startsWith('Bearer') ? token : `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ delta })
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('Failed to update score: ' + res.status + ' ' + txt);
+    }
+
+    const data = await res.json();
+
+    // Persist authoritative snapshot from server
+    if (data?.user) {
+      const updated = { ...prevUser, ...data.user };
+      localStorage.setItem('user', JSON.stringify(updated));
+      window.dispatchEvent(new Event('user:update'));
+    }
+
+    // notify UI that update finished
+    window.dispatchEvent(new CustomEvent('user:update:done', { detail: { delta, serverUser: data?.user } }));
+
+    return data;
+  } catch (err) {
+    console.error('updateUserXP error', err);
+    // revert optimistic update
+    localStorage.setItem('user', JSON.stringify(prevUser));
+    window.dispatchEvent(new Event('user:update'));
+    window.dispatchEvent(new CustomEvent('user:update:done', { detail: { delta, error: true } }));
+    throw err;
+  }
+}
+

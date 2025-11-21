@@ -1,0 +1,68 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "22181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      # In single-broker development setups, the internal topics such as
+      # __consumer_offsets and transaction state topics must be created with
+      # replication factor 1. Otherwise the broker will refuse creation and
+      # consumers will fail with 'group coordinator not available'.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    ports:
+      # Changed host port to 29092 to avoid conflicts with services already listening on 9092
+      - "29092:9092"
+    depends_on:
+      - zookeeper
+
+  kafka-producer:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./backend/kafka-producer:/app
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_TOPIC=leaderboard-updates
+    command: sh -c "npm install kafkajs mongodb --no-save && node publisher.js"
+    depends_on:
+      - kafka
+      - zookeeper
+
+  kafka-consumer:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - ./backend/kafka-consumer:/app
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - KAFKA_BROKER=kafka:9092
+      - KAFKA_TOPIC=leaderboard-updates
+      - KAFKA_CONSUMER_GROUP=leaderboard-consumer-group
+    command: sh -c "npm install kafkajs mongodb --no-save && node consumer.js"
+    depends_on:
+      - kafka
+      - zookeeper
+# Usage:
+# 1) Create a `.env` next to this file or export MONGODB_URI in your shell before running.
+#    Example .env (copy to .env and set your URI):
+#      MONGODB_URI=your_mongodb_uri_here
+# 2) Start the stack:
+#      docker-compose -f docker-compose.kafka.yml up -d
+# Notes:
+# - We use Confluent's cp-kafka/cp-zookeeper images (tags 7.4.0) which are available on Docker Hub.
+# - If you need the broker accessible from your host outside Docker, we've mapped host port 29092 -> container 9092 to avoid common conflicts.
+#   Connect from host at localhost:29092 (or change back to 9092:9092 if you confirm 9092 is free).

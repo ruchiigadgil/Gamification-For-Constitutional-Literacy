@@ -3,6 +3,7 @@ import json
 import random
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from textwrap import dedent
 import google.generativeai as genai
 from dotenv import load_dotenv
 import sys
@@ -37,6 +38,7 @@ subtopics = [
 # In-memory cache for recent questions (to avoid repetition)
 recent_questions = []
 
+
 def generate_content(user_query, system_prompt_text):
     try:
         # Configure the Gemini API
@@ -65,65 +67,79 @@ def generate_content(user_query, system_prompt_text):
                 for part in getattr(getattr(candidate, "content", None), "parts", [])
                 if hasattr(part, "text")
             )
-        
+
         # Clean up markdown code blocks
         if response_text.startswith("```json"):
             response_text = response_text.replace("```json", "").replace("```", "").strip()
         elif response_text.startswith("```"):
             response_text = response_text.replace("```", "").strip()
-            
+
         return response_text
+
     except Exception as e:
         print(f"[Learn Server] API Error: {str(e)}")
         raise ValueError(f"Content generation failed: {str(e)}")
+
 
 @app.route('/generate-question', methods=['POST'])
 def generate_question():
     try:
         # Randomly select a subtopic
         subtopic = random.choice(subtopics)
-        
+
         # System prompt with subtopic and anti-repetition instruction
-        system_prompt = f"""
-        You are an educational AI. Generate ONE multiple-choice question about the Indian Constitution, focusing on {subtopic}.
-        - Provide a unique question that has not been recently asked.
-        - Ensure the question is distinct from these recent questions: {', '.join(recent_questions[-5:])}.
-        - Provide the question text.
-        - Give exactly 4 answer options.
-        - Specify the correct option as the answer.
-        - Include a brief hint suitable for learning.
-        - Keep it easy and learning-oriented.
-        Format the response as JSON:
-        {{
-            "question": "Question text",
-            "options": ["opt1", "opt2", "opt3", "opt4"],
-            "answer": "correct option text",
-            "hint": "learning hint"
-        }}
-        """
+        system_prompt = dedent(f"""
+            You are an educational AI.
+
+            Generate ONE easy multiple-choice question about the Indian Constitution.
+            The question should be simple enough for students in grades 8–10.
+
+            Requirements:
+            - Focus on this subtopic: {subtopic}
+            - The question must be easy and factual.
+            - Make sure it is different from these recent questions: {', '.join(recent_questions[-5:])}
+            - Provide exactly 4 answer options.
+            - Identify the correct option.
+            - Provide a short, helpful hint for learning.
+            - Avoid complex legal language.
+
+            Format the output as JSON exactly like this (ensure valid JSON, no extra text):
+
+            {{
+                "question": "Question text",
+                "options": ["option 1", "option 2", "option 3", "option 4"],
+                "answer": "correct option text",
+                "hint": "simple learning hint",
+                "explanation": "1-2 sentence factual explanation about the correct answer"
+            }}
+        """)
 
         data = request.get_json()
         user_input = data.get('query', 'Generate a question now')
 
         response_text = generate_content(user_input, system_prompt)
         print(f"[Learn Server] Raw response: {response_text[:200]}...")
+
         question_data = json.loads(response_text)
-        
-        # Add question to recent_questions (store only the last 5 to limit memory)
+
+        # Add question to recent_questions (store only last 5)
         recent_questions.append(question_data['question'])
         if len(recent_questions) > 5:
             recent_questions.pop(0)
-        
+
         return jsonify(question_data)
+
     except json.JSONDecodeError as e:
         print(f"[Learn Server] JSON Parse Error: {str(e)}")
         print(f"[Learn Server] Raw response was: {response_text}")
         return jsonify({'error': f"Invalid JSON response: {str(e)}", 'raw_response': response_text}), 500
+
     except Exception as e:
         print(f"[Learn Server] Server Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e), "raw_response": response_text if 'response_text' in locals() else None}), 500
+
 
 @app.route('/generate', methods=['POST'])
 def generate_endpoint():
@@ -146,15 +162,18 @@ def generate_endpoint():
         print(f"[Learn Server] Raw response: {response_text[:200]}...")
         response_json = json.loads(response_text)
         return jsonify(response_json)
+
     except json.JSONDecodeError as e:
         print(f"[Learn Server] JSON Parse Error: {str(e)}")
         print(f"[Learn Server] Raw response was: {response_text}")
         return jsonify({'error': f"Invalid JSON response: {str(e)}", 'raw_response': response_text}), 500
+
     except Exception as e:
         print(f"[Learn Server] Server Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
 
 def command_line_generate():
     try:
@@ -165,11 +184,13 @@ def command_line_generate():
         return
 
     user_query = input("Enter Article no: ")
+
     try:
         response_text = generate_content(user_query, system_prompt_text)
         print(response_text)
     except Exception as e:
         print(f"Error: {str(e)}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--cli":

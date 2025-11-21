@@ -9,8 +9,8 @@ function CourtRoom() {
   const [error, setError] = useState("");
 
   const cases = [
-    { id: 'murder', title: 'The Missing Necklace Mystery', desc: 'Who stole Grandma\'s precious gold necklace?' },
-    { id: 'property', title: 'The Two Brothers & Papa\'s Farm', desc: 'A fight over family land after their father passed away' }
+    { id: 'property', title: '🌻 Garden Sharing Story', desc: 'Two neighbors learning to share garden space peacefully' },
+    { id: 'investigation', title: '📚 Library Books Conflict', desc: 'Students learning about sharing and responsibility' }
   ];
 
   const generateCase = async () => {
