@@ -23,6 +23,7 @@ import Team from "./pages/About/Team"
 import Profile from "./pages/About/Profile"
 import { ProfileContextProvider } from "./pages/About/ProfileContext";
 import GameDaily from "./Daily/Game"
+import CourtRoom from "./pages/CourtRoom"
 
 function AppContent() {
   // const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -58,6 +59,7 @@ function AppContent() {
                 <Route path="/pictionary" element={<Pictionary />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/daily" element={<GameDaily/>}/>
+                <Route path="/court" element={<CourtRoom/>}/>
               </Routes>
               {/* </div> */}
             </div>
