@@ -26,6 +26,83 @@ const BookPage = () => {
   }, [filter]);
 
   const resources = {
+    
+    books: [
+      {
+        id: "The Boy Who Asked Why",
+        name: "The Boy Who Asked Why",
+        link: "https://fliphtml5.com/gryph/kqcc/basic",
+        img: "https://api.getlitt.co/storage/books/original/bhimrao-ambedkar-the-boy-who-asked-why.jpeg",
+      },
+      {
+        id: "NCERT",
+        name: "The Constitution of India (Ebook)",
+        link: "https://ncert.nic.in/textbook/pdf/gees110.pdf",
+        img: "https://champaca.in/cdn/shop/files/61Uym8BxWxL._SY522_grande.jpg?v=1689235471",
+      },
+      {
+        id: "Constitution: Why and How?",
+        name: "Constitution: Why and How?",
+        link: "https://samagra.kite.kerala.gov.in/files/samagra-resource/uploads/tbookscmq/Class_XI/PoliticalScience/Indianconstitutionatwork.pdf",
+        img: "https://m.media-amazon.com/images/I/51HNKmecS0L._AC_UF350,350_QL50_.jpg",
+      },
+      {
+        id: "We, Children of India",
+        name: "We, Children of India by Leila Seth",
+        link: "https://www.arvindguptatoys.com/arvindgupta/leila-seth.pdf",
+        img: "https://1.bp.blogspot.com/_apRR_RXoSFE/S_4OPz7FuvI/AAAAAAAADh8/fRp_whlc7kk/s1600/We,+the+children+of+India.jpg",
+      },
+      {
+        id: "Indian Constitution at Work",
+        name: "Indian Constitution at Work",
+        link: "https://afeias.com/wp-content/uploads/2019/04/class11_Indian-Constitution-at-Work.pdf",
+        img: "https://ncert.nic.in/textbook/pdf/keps2cc.jpg",
+      },
+    ],
+    The_Constitution_of_India:[
+      {
+        id: "English",
+        name: "English",
+        link: "https://cdnbbsr.s3waas.gov.in/s380537a945c7aaa788ccfcdf1b99b5d8f/uploads/2024/07/20240716890312078.pdf",
+        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
+      },
+      {
+        id: "Hindi",
+        name: "Hindi",
+        link: "https://cdnbbsr.s3waas.gov.in/s380537a945c7aaa788ccfcdf1b99b5d8f/uploads/2025/03/202503201580504504.pdf",
+        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
+      },
+      {
+        id: "Marathi",
+        name: "Marathi",
+        link: "https://cdnbbsr.s3waas.gov.in/s380537a945c7aaa788ccfcdf1b99b5d8f/uploads/2023/07/202507081043003900.pdf",
+        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
+      },
+      {
+        id: "Kannada",
+        name: "Kannada",
+        link: "https://cdnbbsr.s3waas.gov.in/s380537a945c7aaa788ccfcdf1b99b5d8f/uploads/2023/05/2023051228.pdf",
+        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
+      },
+      {
+        id: "Sanskrit",
+        name: "Sanskrit",
+        link: "https://cdnbbsr.s3waas.gov.in/s380537a945c7aaa788ccfcdf1b99b5d8f/uploads/2024/11/20241128615803263.pdf",
+        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
+      },
+      {
+        id: "Punjabi",
+        name: "Punjabi",
+        link: "https://cdnbbsr.s3waas.gov.in/s380537a945c7aaa788ccfcdf1b99b5d8f/uploads/2024/06/202406101557910252.pdf",
+        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
+      },
+      {
+        id: "Telugu",
+        name: "Telugu",
+        link: "https://cdnbbsr.s3waas.gov.in/s380537a945c7aaa788ccfcdf1b99b5d8f/uploads/2025/08/202508081113544342.pdf",
+        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
+      },
+    ],
     articles: [
       {
         id: "article_1",
@@ -62,50 +139,6 @@ const BookPage = () => {
         name: "Bharatiya Nyaya Sanhita 2023",
         link: "https://www.lexisnexis.in/blogs/bharatiya-nyaya-sanhita-2023/",
         img: "https://www.lexisnexis.in/blogs/wp-content/uploads/2025/01/Blog-Banner-624x327.png",
-      },
-    ],
-    books: [
-      {
-        id: "book_1",
-        name: "The Constitution of India (Ebook)",
-        link: "https://iasexamportal.com/ebook/the-constitution-of-india",
-        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
-      },
-      {
-        id: "book_2",
-        name: "Indian Constitution PDF",
-        link: "https://www.indiacode.nic.in/bitstream/123456789/15240/1/constitution_of_india.pdf",
-        img: "https://archive.org/services/img/ConstitutionOfINDIA_201906/full/pct:200/0/default.jpg",
-      },
-      {
-        id: "book_3",
-        name: "The Constitution of India (Ebook)",
-        link: "https://iasexamportal.com/ebook/the-constitution-of-india",
-        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
-      },
-      {
-        id: "book_4",
-        name: "The Constitution of India (Ebook)",
-        link: "https://iasexamportal.com/ebook/the-constitution-of-india",
-        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
-      },
-      {
-        id: "book_5",
-        name: "The Constitution of India (Ebook)",
-        link: "https://iasexamportal.com/ebook/the-constitution-of-india",
-        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
-      },
-      {
-        id: "book_6",
-        name: "The Constitution of India (Ebook)",
-        link: "https://iasexamportal.com/ebook/the-constitution-of-india",
-        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
-      },
-      {
-        id: "book_7",
-        name: "The Constitution of India (Ebook)",
-        link: "https://iasexamportal.com/ebook/the-constitution-of-india",
-        img: "https://iasexamportal.com/sites/default/files/the-constitution-of-india-b.jpg",
       },
     ],
     youtube: [
