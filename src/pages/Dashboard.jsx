@@ -516,7 +516,7 @@ const Dashboard = () => {
                           {p.name}
                         </div>
                         <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
-                          Score: {p.score}
+                          Coins🪙: {p.score}
                         </div>
                       </div>
                       <div style={{ fontWeight: 800, color: "#0f172a" }}>
@@ -535,7 +535,7 @@ const Dashboard = () => {
                   }}
                   disabled={updatingScore}
                 >
-                  {updatingScore ? "Updating..." : `Your Score: ${userScore}`}
+                  {updatingScore ? "Updating..." : `Your Coins🪙: ${userScore}`}
                 </button>
               </div>
             </div>

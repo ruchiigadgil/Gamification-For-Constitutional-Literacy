@@ -72,7 +72,7 @@ Return ONLY this JSON structure (no markdown, no extra text):
 
 {{"caseTitle":"{scenario['title']}","summary":"Brief 2-sentence summary","personA_name":"{scenario['personA_name']}","personB_name":"{scenario['personB_name']}","personA_dialogues":["Short statement 1","Short statement 2","Short statement 3","Short statement 4","Short statement 5"],"personB_dialogues":["Short statement 1","Short statement 2","Short statement 3 with clue","Short statement 4","Short statement 5"],"mcq":{{"guilty":["{scenario['personA_name']}","{scenario['personB_name']}","Both are guilty","No one is guilty"],"reason":["They lied to the court about their actions","They tried to take something that wasn't theirs","They broke a family promise or trust","They disrespected elders or fairness"],"article":["Article 14 - Right to Equality","Article 19 - Right to Freedom","Article 21 - Right to Life and Personal Liberty","Article 39 - Principles of Policy for Fair Distribution"]}},"correctAnswers":{{"guilty":"{scenario['guilty']}","reason":"{scenario['reason']}","article":"{scenario['article']}"}},"verdict_explanation":"2 sentences explaining verdict positively","judge_tip":"Short wise tip about honesty"}}
 
-Rules: Keep dialogues SHORT (max 15 words each). Make {scenario['guilty']} guilty through subtle clues. Kid-friendly tone."""
+Rules: Keep dialogues SHORT (max 15 words each). Make {scenario['guilty']} guilty through subtle clues. Kid-friendly tone. also try to hint who is the guilty"""
 
         # Safety settings - allow fictional content
         safety_settings = [

@@ -258,7 +258,7 @@ const Game = () => {
             ← Back to Dashboard
           </button>
           <div className="maze-score">
-            <span className="score-label">Coins🪙</span>
+            <span className="score-label">Coins🪙:</span>
             <span className="score-value">{score}</span>
           </div>
         </div>
@@ -359,7 +359,8 @@ const styles = `
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1.25rem;
+    margin-left:2rem;
+    padding: 0.5rem 0.5rem;
     background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
     border-radius: 14px;
     border: 2px solid rgba(99, 102, 241, 0.2);
