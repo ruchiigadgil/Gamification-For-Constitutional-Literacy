@@ -24,6 +24,7 @@ import Profile from "./pages/About/Profile"
 import { ProfileContextProvider } from "./pages/About/ProfileContext";
 import GameDaily from "./Daily/Game"
 import CourtRoom from "./pages/CourtRoom"
+import News from "./pages/news"
 
 function AppContent() {
   // const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -60,6 +61,7 @@ function AppContent() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/daily" element={<GameDaily/>}/>
                 <Route path="/court" element={<CourtRoom/>}/>
+                <Route path="/news" element={<News/>}/>
               </Routes>
               {/* </div> */}
             </div>

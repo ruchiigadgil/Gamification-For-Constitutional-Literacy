@@ -21,7 +21,7 @@ function News() {
 
   // Fetch News
   useEffect(() => {
-    fetch("http://localhost:5000/constitution-news")
+    fetch("http://localhost:5008/constitution-news")
       .then((res) => res.json())
       .then((data) => {
         setArticles(data.articles);
