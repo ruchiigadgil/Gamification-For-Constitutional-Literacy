@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  bestStreak: {
+    type: Number,
+    default: 0
+  },
   dailyWordCompleted: {
     type: Boolean,
     default: false

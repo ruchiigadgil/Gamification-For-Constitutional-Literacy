@@ -7,6 +7,8 @@ const Dashboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const [updatingScore, setUpdatingScore] = useState(false);
+  const [earnedBadge, setEarnedBadge] = useState(null); // badge to show in popup
+  const [badgeSyncStatus, setBadgeSyncStatus] = useState(null);
 
   useEffect(() => {
     // Get user data from localStorage
@@ -132,11 +134,13 @@ const Dashboard = () => {
     },
     {
       id: "about",
-      title: "About Us",
-      description: "Learn more about InConQuest",
-      icon: "ℹ️",
+      // Replaced About Us block with News (user requested)
+      id: "news",
+      title: "News",
+      description: "Latest updates and announcements",
+      icon: "📰",
       color: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-      path: "/about",
+      path: "/news",
     },
     {
       id: "books",
@@ -243,13 +247,18 @@ const Dashboard = () => {
     marginBottom: "12px",
   };
 
-  const leaderboardItemStyle = (idx) => ({
+  const leaderboardItemStyle = (idx, isCurrent = false) => ({
     display: "flex",
     alignItems: "center",
     gap: "12px",
     padding: "10px",
     borderRadius: "12px",
-    background: idx % 2 === 0 ? "transparent" : "rgba(99,102,241,0.03)",
+    background: isCurrent
+      ? "linear-gradient(90deg, rgba(16,185,129,0.08), rgba(16,185,129,0.03))"
+      : idx % 2 === 0
+      ? "transparent"
+      : "rgba(99,102,241,0.03)",
+    border: isCurrent ? "1px solid rgba(16,185,129,0.15)" : "none",
   });
 
   const avatarStyle = {
@@ -281,7 +290,11 @@ const Dashboard = () => {
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
+    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+    border: "1px solid rgba(2,6,23,0.04)",
+    boxShadow: "0 8px 20px rgba(2,6,23,0.06)",
   };
+
 
   const yourScoreBtnStyle = {
     background: "linear-gradient(135deg, #667eea, #764ba2)",
@@ -298,6 +311,105 @@ const Dashboard = () => {
   };
 
   const userScore = user?.score ?? user?.xp ?? 0;
+
+  // Badge tiers
+  const BADGE_TIERS = [
+    {
+      key: 'quick_spark',
+      title: 'Quick Spark',
+      threshold: 50,
+      emoji: '⚡',
+      short: '⭐ 50 Coins — “Quick Spark” ⚡',
+      description: 'You’ve ignited your learning journey with speed and enthusiasm. A small spark that shows big potential ahead.'
+    },
+    {
+      key: 'skill_surfer',
+      title: 'Skill Surfer',
+      threshold: 100,
+      emoji: '🌊',
+      short: '🌟 100 Coins — “Skill Surfer” 🌊',
+      description: 'You’re riding the wave of knowledge with growing confidence. Each challenge makes you sharper and stronger.'
+    },
+    {
+      key: 'prime_prodigy',
+      title: 'Prime Prodigy',
+      threshold: 200,
+      emoji: '✨',
+      short: '💎 200 Coins — “Prime Prodigy” ✨',
+      description: 'Your dedication is turning into true mastery. A standout achiever with unstoppable momentum.'
+    }
+  ];
+
+  // When user's coins change, check for newly earned badges (batch-award)
+  const awardedBatchKeyRef = React.useRef(null);
+  useEffect(() => {
+    if (!user) return;
+    const badges = Array.isArray(user.badges) ? user.badges : [];
+
+    // Collect all tiers the user now qualifies for but doesn't yet have
+    const newlyEarned = BADGE_TIERS.filter(t => userScore >= t.threshold && !badges.includes(t.key));
+    if (!newlyEarned.length) return;
+
+    // Build a stable key so we show the popup only once for this specific batch
+    const batchKey = newlyEarned.map(t => t.key).sort().join(',');
+    if (awardedBatchKeyRef.current === batchKey) return; // already showed
+
+    // Optimistically update local user snapshot to include new badges
+    const newBadgeKeys = newlyEarned.map(t => t.key);
+    const updatedUser = { ...user, badges: Array.from(new Set([...(badges || []), ...newBadgeKeys])) };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+
+    // Show a single popup listing all newly awarded badges
+    setEarnedBadge({ multiple: true, tiers: newlyEarned });
+    awardedBatchKeyRef.current = batchKey;
+
+    // Persist each badge to backend; do them in parallel but continue gracefully if endpoint missing
+    (async () => {
+      try {
+        const rawToken = localStorage.getItem('token');
+        if (!rawToken) {
+          setBadgeSyncStatus('no-token');
+          return;
+        }
+        const authHeader = rawToken.startsWith('Bearer') ? rawToken : `Bearer ${rawToken}`;
+
+        // call endpoint for each badge (server $addToSet is idempotent)
+        const promises = newBadgeKeys.map(b => fetch('/api/auth/update-badges', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': authHeader
+          },
+          body: JSON.stringify({ badge: b })
+        }));
+
+        const results = await Promise.allSettled(promises);
+        const failed = results.some(r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value && !r.value.ok));
+        setBadgeSyncStatus(failed ? 'failed' : 'synced');
+
+        // Refresh authoritative user snapshot from server if possible
+        try {
+          const verifyRes = await fetch('/api/auth/verify', {
+            headers: { 'Authorization': authHeader }
+          });
+          if (verifyRes.ok) {
+            const data = await verifyRes.json();
+            if (data?.user) {
+              localStorage.setItem('user', JSON.stringify({ ...user, ...data.user }));
+              setUser({ ...user, ...data.user });
+              window.dispatchEvent(new Event('user:update'));
+            }
+          }
+        } catch (e) {
+          // ignore verify failure
+        }
+      } catch (err) {
+        console.warn('badge persistence failed (ok to ignore):', err);
+        setBadgeSyncStatus('failed');
+      }
+    })();
+  }, [userScore]);
 
   const getCardStyle = (item, isHovered) => ({
     background: isHovered ? item.color : "rgba(255, 255, 255, 0.9)",
@@ -396,23 +508,178 @@ const Dashboard = () => {
       <style>{keyframes}</style>
       <div style={dashboardStyle}>
         <div style={containerStyle}>
+          {/* Top-left circular info icon that links to About page */}
+          <div
+            style={{ position: "absolute", top: 20, left: 20, zIndex: 1500 }}
+          >
+            <button
+              onClick={() => handleNavigation("/about")}
+              aria-label="About InConQuest"
+              title="About"
+              style={{
+                width: 90,
+                height: 55,
+                borderRadius: 30,
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "linear-gradient(135deg,#ffffff,#f1f5f9)",
+                boxShadow: "0 6px 18px rgba(2,6,23,0.12)",
+                cursor: "pointer",
+                fontSize: "1.1rem",
+                marginTop: "1rem",
+                marginLeft: "0.7rem",
+              }}
+            >
+              <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                About us
+              </span>
+            </button>
+          </div>
+
+          {/* Blur overlay when modal shown */}
+          {earnedBadge && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.35)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2000,
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #ffffff, #f8fafc)",
+                  borderRadius: 16,
+                  padding: 28,
+                  maxWidth: 520,
+                  width: "90%",
+                  boxShadow: "0 30px 80px rgba(2,6,23,0.3)",
+                  textAlign: "center",
+                }}
+              >
+                {earnedBadge.multiple ? (
+                  <>
+                    <div style={{ fontSize: 36 }}>🏅</div>
+                    <h2 style={{ marginTop: 8, marginBottom: 6 }}>
+                      Congrats — You earned {earnedBadge.tiers.length} new badge
+                      {earnedBadge.tiers.length > 1 ? "s" : ""}!
+                    </h2>
+                    <div
+                      style={{
+                        color: "#374151",
+                        marginBottom: 18,
+                        textAlign: "left",
+                      }}
+                    >
+                      {earnedBadge.tiers.map((t) => (
+                        <div
+                          key={t.key}
+                          style={{
+                            marginBottom: 12,
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 12,
+                          }}
+                        >
+                          <div style={{ fontSize: 28 }}>{t.emoji}</div>
+                          <div>
+                            <div style={{ fontWeight: 700 }}>{t.short}</div>
+                            <div
+                              style={{ fontSize: "0.95rem", color: "#475569" }}
+                            >
+                              {t.description}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setEarnedBadge(null)}
+                      style={{
+                        padding: "10px 18px",
+                        borderRadius: 10,
+                        background: "linear-gradient(135deg,#667eea,#8b5cf6)",
+                        color: "white",
+                        border: "none",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Great — keep going →
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 48 }}>{earnedBadge.emoji}</div>
+                    <h2 style={{ marginTop: 8, marginBottom: 6 }}>
+                      {earnedBadge.short}
+                    </h2>
+                    <p style={{ color: "#374151", marginBottom: 18 }}>
+                      {earnedBadge.description}
+                    </p>
+                    <button
+                      onClick={() => setEarnedBadge(null)}
+                      style={{
+                        padding: "10px 18px",
+                        borderRadius: 10,
+                        background: "linear-gradient(135deg,#667eea,#8b5cf6)",
+                        color: "white",
+                        border: "none",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Nice! Continue →
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Header */}
           <div style={headerStyle}>
             <h1 style={titleStyle}>InConQuest</h1>
             {user && (
-              <p
+              <div
                 style={{
-                  fontSize: "1.3rem",
-                  color: "#64748b",
-                  fontWeight: "500",
-                  marginTop: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  marginTop: 10,
                 }}
               >
-                Welcome back,{" "}
-                <span style={{ color: "#667eea", fontWeight: "700" }}>
-                  {user.fullName}
-                </span>
-                ! 👋
-              </p>
+                {/* <div style={avatarStyle}>
+                  {user.fullName
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")}
+                </div> */}
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <div style={{ fontSize: "1rem", color: "#64748b" }}>
+                    Welcome back,
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      color: "#685FBA",
+                      fontSize: "1.2rem",
+                    }}
+                  >
+                    {user.fullName} !👋
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
@@ -464,12 +731,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                     {isHovered && (
-                      <div
-                        style={{
-                          ...shimmerStyle,
-                          left: "100%",
-                        }}
-                      ></div>
+                      <div style={{ ...shimmerStyle, left: "100%" }} />
                     )}
                     <div
                       style={{
@@ -484,7 +746,7 @@ const Dashboard = () => {
                         borderRadius: "50%",
                         zIndex: 0,
                       }}
-                    ></div>
+                    />
                   </div>
                 );
               })}
@@ -501,42 +763,78 @@ const Dashboard = () => {
                   <small style={{ color: "#64748b" }}>Top 5</small>
                 </div>
                 <div>
-                  {leaderboard.slice(0, 5).map((p, idx) => (
-                    <div key={p.rank} style={leaderboardItemStyle(idx)}>
-                      <div style={rankStyle}>{p.rank}</div>
-                      <div style={avatarStyle}>
-                        {p.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .slice(0, 2)
-                          .join("")}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, color: "#0f172a" }}>
-                          {p.name}
+                  {leaderboard.slice(0, 5).map((p, idx) => {
+                    const currentUserId =
+                      user?.id || user?._id || user?._id?.toString();
+                    const isCurrent =
+                      currentUserId && String(p.id) === String(currentUserId);
+                    return (
+                      <div
+                        key={p.rank}
+                        style={leaderboardItemStyle(idx, isCurrent)}
+                      >
+                        <div style={rankStyle}>{p.rank}</div>
+                        <div style={avatarStyle}>
+                          {p.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join("")}
                         </div>
-                        <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
-                          Coins🪙: {p.score}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                            {p.name}
+                          </div>
+                          <div
+                            style={{ fontSize: "0.85rem", color: "#64748b" }}
+                          >
+                            Coins🪙: {p.score}
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: 800, color: "#0f172a" }}>
+                          {p.score}
                         </div>
                       </div>
-                      <div style={{ fontWeight: 800, color: "#0f172a" }}>
-                        {p.score}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-              <div style={yourScoreCardStyle}>
-                <button
+
+              {/* Compact user coins row styled like leaderboard */}
+              <div style={{ ...yourScoreCardStyle, padding: 12 }}>
+                <div
                   style={{
-                    ...yourScoreBtnStyle,
-                    opacity: updatingScore ? 0.8 : 1,
-                    cursor: updatingScore ? "wait" : "default",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    width: "100%",
                   }}
-                  disabled={updatingScore}
                 >
-                  {updatingScore ? "Updating..." : `Your Coins🪙: ${userScore}`}
-                </button>
+                  <div style={avatarStyle}>
+                    {user?.fullName
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                      {user?.fullName}
+                    </div>
+                    <div style={{ fontSize: "0.85rem", color: "#64748b" }}>
+                      Your Coins🪙:
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 900,
+                      fontSize: "1.25rem",
+                      color: "#0f172a",
+                    }}
+                  >
+                    {userScore}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -569,50 +867,181 @@ const Dashboard = () => {
 
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-                gap: "25px",
+                display: "flex",
+                gap: "20px",
+                alignItems: "stretch",
+                justifyContent: "space-between",
               }}
             >
-              {[
-                { label: "Quizzes Completed", value: "42", color: "#667eea" },
-                { label: "Badges Earned", value: "12", color: "#f093fb" },
-                { label: "Days Streak", value: "8", color: "#43e97b" },
-                { label: "XP Points", value: "3500", color: "#4facfe" },
-              ].map((stat, index) => (
+              {/* Daily quiz card - left */}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "20px 18px",
+                  borderRadius: 16,
+                  background:
+                    "linear-gradient(135deg, #e6fff5 0%, #f2fff9 100%)",
+                  border: "1px solid #d1fae5",
+                }}
+              >
                 <div
-                  key={index}
                   style={{
-                    textAlign: "center",
-                    padding: "20px 15px",
-                    borderRadius: "16px",
-                    background: `linear-gradient(135deg, ${stat.color}15, ${stat.color}25)`,
-                    border: `2px solid ${stat.color}30`,
-                    transition: "all 0.3s ease",
-                    animation: `float 3s ease-in-out infinite ${index * 0.5}s`,
+                    fontSize: "1rem",
+                    color: "#64748b",
+                    marginBottom: 6,
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "2rem",
-                      fontWeight: "800",
-                      color: stat.color,
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {stat.value}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.85rem",
-                      color: "#64748b",
-                      fontWeight: "500",
-                    }}
-                  >
-                    {stat.label}
-                  </div>
+                  Daily Quiz Streak:
                 </div>
-              ))}
+                <div
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: 800,
+                    color: "#10b981",
+                  }}
+                >
+                  {user?.streak ?? 0}
+                </div>
+              </div>
+
+              {/* Badges card - middle */}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "20px 18px",
+                  borderRadius: 16,
+                  background: "linear-gradient(135deg, #f8fafc, #ffffff)",
+                  border: "1px solid #e6e9ef",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "0.95rem",
+                    color: "#64748b",
+                    marginBottom: 8,
+                  }}
+                >
+                  Your Badges:
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {BADGE_TIERS.map((t) => {
+                    const has =
+                      Array.isArray(user?.badges) &&
+                      user.badges.includes(t.key);
+                    return (
+                      <div
+                        key={t.key}
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          width: 72,
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "relative",
+                            width: 56,
+                            height: 56,
+                            borderRadius: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: has
+                              ? "linear-gradient(135deg,#fef3c7,#fde68a)"
+                              : "#f1f5f9",
+                            boxShadow: has
+                              ? "0 8px 20px rgba(99,102,241,0.08)"
+                              : "none",
+                          }}
+                        >
+                          <div style={{ fontSize: 24 }}>{t.emoji}</div>
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: -6,
+                              right: -6,
+                              width: 22,
+                              height: 22,
+                              borderRadius: 11,
+                              background: has ? "#10b981" : "#e2e8f0",
+                              color: has ? "white" : "#94a3b8",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 12,
+                              boxShadow: "0 4px 8px rgba(0,0,0,0.06)",
+                            }}
+                          >
+                            {has ? "✓" : "🔒"}
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 6,
+                            fontSize: "0.8rem",
+                            color: has ? "#0f172a" : "#94a3b8",
+                            fontWeight: 700,
+                            textAlign: "center",
+                          }}
+                        >
+                          {t.title}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Coins card - right (learning journey) */}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "20px 18px",
+                  borderRadius: 16,
+                  background:
+                    "linear-gradient(135deg, #e6f0ff 0%, #f5f9ff 100%)",
+                  border: "1px solid #dbeafe",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "1rem",
+                    color: "#64748b",
+                    marginBottom: 6,
+                  }}
+                >
+                  Your Coins
+                </div>
+                <div
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: 800,
+                    color: "#4facfe",
+                  }}
+                >
+                  {userScore}
+                </div>
+              </div>
             </div>
           </div>
         </div>

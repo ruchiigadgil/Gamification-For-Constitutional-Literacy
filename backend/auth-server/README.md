@@ -27,7 +27,7 @@ Open `backend/auth-server/.env` and replace the placeholder with your actual Mon
 MONGODB_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/inconquest?retryWrites=true&w=majority
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRE=7d
-PORT=5002
+PORT=3001
 ```
 
 **Important Notes:**
@@ -44,7 +44,7 @@ npm start
 
 You should see:
 ```
-🚀 Auth Server running on http://localhost:5002
+🚀 Auth Server running on http://localhost:3001
 ✅ MongoDB Atlas Connected Successfully
 ```
 
@@ -52,19 +52,19 @@ You should see:
 
 ### Test Health Endpoint:
 ```bash
-curl http://localhost:5002/health
+curl http://localhost:3001/health
 ```
 
 ### Test Signup:
 ```bash
-curl -X POST http://localhost:5002/api/auth/signup \
+curl -X POST http://localhost:3001/api/auth/signup \
   -H "Content-Type: application/json" \
   -d "{\"fullName\":\"Test User\",\"email\":\"test@example.com\",\"password\":\"test123\"}"
 ```
 
 ### Test Login:
 ```bash
-curl -X POST http://localhost:5002/api/auth/login \
+curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"test@example.com\",\"password\":\"test123\"}"
 ```
@@ -113,8 +113,7 @@ Verify JWT token and get user data
 
 ## 🔧 Troubleshooting
 
-### "Unable to connect to server"
-- Make sure the auth server is running on port 5002
+- Make sure the auth server is running on port 3001
 - Check if the port is not already in use
 - Verify firewall settings
 

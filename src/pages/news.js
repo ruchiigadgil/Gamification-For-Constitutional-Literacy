@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import NewsCard from "./NewsCard";
 
 function News() {
   const [articles, setArticles] = useState([]);
@@ -19,15 +20,47 @@ function News() {
     "Amendments",
   ];
 
-  // Fetch News
+  // Fetch News from backend with support for category/search/pagination
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    fetch("http://localhost:5008/constitution-news")
-      .then((res) => res.json())
-      .then((data) => {
-        setArticles(data.articles);
-        setFiltered(data.articles);
-      });
-  }, []);
+    const controller = new AbortController();
+
+    const fetchNews = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = new URLSearchParams();
+        if (category && category !== "All") params.append("category", category);
+        if (searchQuery && searchQuery.trim() !== "") params.append("search", searchQuery.trim());
+        params.append("page", currentPage);
+        params.append("pageSize", articlesPerPage);
+
+        const res = await fetch(`http://localhost:5008/constitution-news?${params.toString()}`, {
+          signal: controller.signal
+        });
+
+        if (!res.ok) throw new Error(`News fetch failed: ${res.status}`);
+
+        const data = await res.json();
+        setArticles(data.articles || []);
+        setFiltered(data.articles || []);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch news', err);
+          setError(err.message || 'Failed to fetch news');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNews();
+
+    return () => controller.abort();
+  }, [category, searchQuery, currentPage]);
 
   // Filtering
   useEffect(() => {
@@ -207,22 +240,14 @@ function News() {
       />
 
       {/* ARTICLE CARDS */}
-      {currentArticles.map((a, i) => (
-        <div key={i} style={card}>
-          {a.urlToImage && <img src={a.urlToImage} style={imgStyle} alt="" />}
-          <div>
-            <h3 style={{ color: "#3d2559" }}>{a.title}</h3>
-            <p style={{ fontSize: "14px", opacity: 0.8 }}>{a.description}</p>
-            <a
-              href={a.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#7a52b3", fontWeight: 600 }}
-            >
-              Read full article →
-            </a>
-          </div>
-        </div>
+      {loading && <div style={{ textAlign: 'center', margin: 20 }}>Loading news…</div>}
+      {error && <div style={{ textAlign: 'center', margin: 20, color: 'crimson' }}>{error}</div>}
+      {!loading && !error && currentArticles.length === 0 && (
+        <div style={{ textAlign: 'center', margin: 20 }}>No articles found.</div>
+      )}
+
+      {!loading && !error && currentArticles.map((a, i) => (
+        <NewsCard key={i} article={a} />
       ))}
 
       {/* PAGINATION */}

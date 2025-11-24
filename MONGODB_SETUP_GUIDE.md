@@ -46,7 +46,7 @@ Replace the MongoDB URI with your actual connection string:
 MONGODB_URI=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/inconquest?retryWrites=true&w=majority
 JWT_SECRET=inconquest-jwt-secret-key-2024-super-secure
 JWT_EXPIRE=7d
-PORT=5002
+PORT=3001
 ```
 
 **⚠️ IMPORTANT:**
@@ -73,7 +73,7 @@ npm start
 
 You should see:
 ```
-🚀 Auth Server running on http://localhost:5002
+🚀 Auth Server running on http://localhost:3001
 ✅ MongoDB Atlas Connected Successfully
 ```
 
@@ -161,7 +161,7 @@ When a user signs up, MongoDB stores:
 ## 🚨 Troubleshooting
 
 ### Error: "Unable to connect to server"
-**Solution**: Make sure auth server is running on port 5002
+**Solution**: Make sure auth server is running on port 3001
 ```bash
 cd backend/auth-server
 npm start
@@ -183,7 +183,7 @@ npm start
 **Solution**: 
 1. Open browser DevTools (F12)
 2. Check Console for errors
-3. Check Network tab - is API call reaching `localhost:5002`?
+3. Check Network tab - is API call reaching `localhost:3001`?
 4. Verify auth server is running
 
 ## 🔒 Security Features
@@ -229,7 +229,7 @@ npm start
 
 ### Test API Health:
 ```bash
-curl http://localhost:5002/health
+curl http://localhost:3001/health
 ```
 
 ### Check MongoDB Connection:
@@ -242,7 +242,7 @@ Look for this in terminal:
 
 - [ ] MongoDB connection string updated in `.env`
 - [ ] IP address whitelisted in MongoDB Atlas
-- [ ] Auth server running on port 5002
+- [ ] Auth server running on port 3001
 - [ ] React app running on port 3000
 - [ ] Can create account through SignUp page
 - [ ] Can login with created account

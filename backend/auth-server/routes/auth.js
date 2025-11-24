@@ -3,20 +3,61 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Badge tiers (server-side canonical list)
+const BADGE_TIERS = [
+  { key: 'quick_spark', threshold: 50 },
+  { key: 'skill_surfer', threshold: 100 },
+  { key: 'prime_prodigy', threshold: 200 }
+];
+
+// Helper: award badges based on current xp for a given user id
+const awardBadgesForUser = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return null;
+    const currentBadges = Array.isArray(user.badges) ? user.badges : [];
+    const toAward = BADGE_TIERS.filter(t => (user.xp || 0) >= t.threshold && !currentBadges.includes(t.key)).map(t => t.key);
+    if (!toAward.length) return null;
+
+    // Add all missing badges atomically using $addToSet + $each
+    const updated = await User.findByIdAndUpdate(userId, { $addToSet: { badges: { $each: toAward } } }, { new: true });
+    console.log(`🏅 Awarded badges to ${updated.email}: ${toAward.join(',')}`);
+    return updated;
+  } catch (err) {
+    console.error('awardBadgesForUser error', err);
+    return null;
+  }
+};
+
 // Helper function to check and reset daily word completion
 const checkAndResetDailyWord = async (user) => {
   const today = new Date().toDateString();
-  
-  // If the completion date is not today, reset it
-  if (user.dailyWordCompletedDate && user.dailyWordCompletedDate !== today) {
-    user.dailyWordCompleted = false;
-    user.dailyWordCompletedDate = null;
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+  // If completed today, keep the flag
+  if (user.dailyWordCompletedDate === today) {
+    user.dailyWordCompleted = true;
     await user.save();
-    console.log(`🔄 Reset daily word for user: ${user.email}`);
+    return true;
   }
-  
-  // Return whether it's completed today
-  return user.dailyWordCompletedDate === today;
+
+  // If completed yesterday, keep streak but mark not completed for today
+  if (user.dailyWordCompletedDate === yesterday) {
+    user.dailyWordCompleted = false;
+    // keep dailyWordCompletedDate (yesterday) for streak checks
+    await user.save();
+    return false;
+  }
+
+  // If last completed before yesterday (or null) the streak is broken — reset
+  if (user.streak && user.streak !== 0) {
+    user.streak = 0;
+    console.log(`🔄 Reset streak for user: ${user.email}`);
+  }
+  user.dailyWordCompleted = false;
+  user.dailyWordCompletedDate = null;
+  await user.save();
+  return false;
 };
 
 // Generate JWT Token
@@ -77,7 +118,8 @@ router.post('/signup', async (req, res) => {
         level: user.level,
         xp: user.xp,
         badges: user.badges,
-        streak: user.streak
+        streak: user.streak,
+        bestStreak: user.bestStreak || 0
       }
     });
 
@@ -170,6 +212,7 @@ router.post('/login', async (req, res) => {
         xp: user.xp,
         badges: user.badges,
         streak: user.streak,
+        bestStreak: user.bestStreak || 0,
         quizzesTaken: user.quizzesTaken,
         dailyWordCompleted: isDailyWordCompletedToday
       }
@@ -226,6 +269,7 @@ router.get('/verify', async (req, res) => {
         xp: user.xp,
         badges: user.badges,
         streak: user.streak,
+        bestStreak: user.bestStreak || 0,
         quizzesTaken: user.quizzesTaken,
         dailyWordCompleted: isDailyWordCompletedToday
       }
@@ -259,23 +303,56 @@ router.post('/complete-daily', async (req, res) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Update user
+    // Compute streak and update user accordingly
     const today = new Date().toDateString();
-    const user = await User.findByIdAndUpdate(
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+    let user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // If already completed today, return current state
+    if (user.dailyWordCompletedDate === today) {
+      return res.status(200).json({
+        success: true,
+        message: 'Daily word already completed today',
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          email: user.email,
+          xp: user.xp,
+          streak: user.streak,
+          bestStreak: user.bestStreak || 0,
+          dailyWordCompleted: true
+        }
+      });
+    }
+
+    // Determine new streak: increment if last play was yesterday, otherwise start at 1
+    const newStreak = (user.dailyWordCompletedDate === yesterday) ? ((user.streak || 0) + 1) : 1;
+    const newBest = Math.max(user.bestStreak || 0, newStreak);
+
+    // Persist update: mark completed today, update streaks and award xp
+    user = await User.findByIdAndUpdate(
       decoded.id,
       {
-        dailyWordCompleted: true,
-        dailyWordCompletedDate: today,
-        $inc: { xp: 50 } // Award 50 XP for completing daily word
+        $set: {
+          dailyWordCompleted: true,
+          dailyWordCompletedDate: today,
+          streak: newStreak,
+          bestStreak: newBest
+        },
+        $inc: { xp: 50 }
       },
       { new: true }
     );
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+
+    // Award badges if thresholds hit
+    try {
+      await awardBadgesForUser(user._id);
+    } catch (e) {
+      console.warn('Failed to auto-award badges after daily completion', e);
     }
 
     console.log('✅ Daily word completed for user:', user.email);
@@ -288,6 +365,8 @@ router.post('/complete-daily', async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         xp: user.xp,
+        streak: user.streak,
+        bestStreak: user.bestStreak || 0,
         dailyWordCompleted: true
       }
     });
@@ -331,6 +410,13 @@ router.post('/update-score', async (req, res) => {
 
     console.log(`🔔 Updated score for ${user.email}: delta=${delta}, new xp=${user.xp}`);
 
+    // After xp update, award any badges the user qualifies for
+    try {
+      await awardBadgesForUser(user._id);
+    } catch (e) {
+      console.warn('Failed to auto-award badges after score update', e);
+    }
+
     res.status(200).json({ success: true, user: { id: user._id, fullName: user.fullName, email: user.email, xp: user.xp } });
   } catch (error) {
     console.error('Update Score Error:', error);
@@ -355,6 +441,51 @@ router.get('/leaderboard', async (req, res) => {
   } catch (err) {
     console.error('Leaderboard fetch error', err);
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
+// @route   POST /api/auth/update-badges
+// @desc    Add a badge to the user's badges array (idempotent)
+// @access  Protected
+router.post('/update-badges', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { badge } = req.body;
+    if (!badge || typeof badge !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid badge' });
+    }
+
+    // Add badge if not present
+    const user = await User.findByIdAndUpdate(
+      decoded.id,
+      { $addToSet: { badges: badge } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    console.log(`🏅 Badge added for ${user.email}: ${badge}`);
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        xp: user.xp,
+        badges: user.badges
+      }
+    });
+  } catch (error) {
+    console.error('Update Badges Error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
