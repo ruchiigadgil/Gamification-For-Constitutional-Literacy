@@ -4,6 +4,7 @@ import snlImage from "./images/snl.png";
 import multiQuizImage from "./images/multi_quiz.png";
 import mazeGameImage from "./images/maze_game.png";
 import pict from "./images/pict.png";
+import courtRoom from "./images/court.png"
 
 const Games = () => {
   const navigate = useNavigate();
@@ -49,6 +50,16 @@ const Games = () => {
       duration: "15 mins",
       li: "/pictionary",
     },
+    {
+      id: 5,
+      title: "In The Court",
+      description: "Test your knowledge of the Solving Cases",
+      image: courtRoom,
+      level: "All Levels",
+      players: "2-4 Players",
+      duration: "15 mins",
+      li: "/court",
+    }
   ];
 
   const containerStyle = {

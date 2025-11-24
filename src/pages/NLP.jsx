@@ -225,22 +225,22 @@ function NLP() {
     height: "100vh",
     width: "100%",
     maxWidth: "100vw",
-    background:
-      "linear-gradient(135deg, #0f0f23 0%, #1a1b3e 50%, #2d1b69 100%)",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    color: "#e2e8f0",
+    color: "#000000",
     overflow: "hidden",
     display: "flex",
     flexDirection: "column",
     boxSizing: "border-box",
+    position: "relative",
   };
 
   const headerStyle = {
-    padding: "16px 24px",
-    borderBottom: "1px solid rgba(139, 92, 246, 0.2)",
-    background: "rgba(15, 15, 35, 0.8)",
-    backdropFilter: "blur(10px)",
+    padding: "20px 24px",
+    borderBottom: "2px solid rgba(255, 255, 255, 0.1)",
+    background: "rgba(255, 255, 255, 0.05)",
+    backdropFilter: "blur(20px)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
@@ -248,6 +248,7 @@ function NLP() {
     flexWrap: "wrap",
     gap: "12px",
     minHeight: "auto",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
   };
 
   const titleContainerStyle = {
@@ -259,16 +260,17 @@ function NLP() {
   const titleStyle = {
     fontSize: "clamp(1.25rem, 4vw, 1.75rem)",
     fontWeight: "700",
-    background: "linear-gradient(135deg, #8b5cf6, #a855f7, #c084fc)",
+    background: "linear-gradient(135deg, #ffffff, #f0e7ff)",
     backgroundClip: "text",
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
     margin: 0,
+    textShadow: "0 2px 10px rgba(255, 255, 255, 0.3)",
   };
 
   const subtitleStyle = {
     fontSize: "0.875rem",
-    color: "#94a3b8",
+    color: "rgba(0, 0, 0, 0.8)",
     fontWeight: "400",
     margin: 0,
   };
@@ -278,7 +280,7 @@ function NLP() {
     alignItems: "center",
     gap: "12px",
     fontSize: "0.875rem",
-    color: "#94a3b8",
+    color: "rgba(0, 0, 0, 0.9)",
   };
 
   const mainContentStyle = {
@@ -295,38 +297,42 @@ function NLP() {
     flex: window.innerWidth <= 768 ? 1 : 3,
     display: "flex",
     flexDirection: "column",
-    background: "rgba(26, 27, 62, 0.6)",
-    borderRadius: "16px",
-    border: "1px solid rgba(139, 92, 246, 0.2)",
-    backdropFilter: "blur(10px)",
+    background: "rgba(255, 255, 255, 0.15)",
+    borderRadius: "20px",
+    border: "2px solid rgba(255, 255, 255, 0.2)",
+    backdropFilter: "blur(20px)",
     minHeight: window.innerWidth <= 768 ? "300px" : 0,
     minWidth: 0,
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+    transition: "all 0.3s ease",
   };
 
   const chatHeaderStyle = {
     padding: "clamp(12px, 2vw, 16px) clamp(16px, 3vw, 20px)",
-    borderBottom: "1px solid rgba(139, 92, 246, 0.2)",
+    borderBottom: "2px solid rgba(255, 255, 255, 0.15)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     flexShrink: 0,
     flexWrap: "wrap",
     gap: "8px",
+    background: "rgba(255, 255, 255, 0.05)",
   };
 
   const chatTitleStyle = {
     fontSize: "1rem",
     fontWeight: "600",
-    color: "#e2e8f0",
+    color: "#000000ff",
     margin: 0,
   };
 
   const messageCountStyle = {
     fontSize: "0.75rem",
-    color: "#94a3b8",
-    background: "rgba(139, 92, 246, 0.1)",
-    padding: "4px 8px",
+    color: "#000000ff",
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "4px 12px",
     borderRadius: "12px",
+    fontWeight: "500",
   };
 
   const chatBoxStyle = {
@@ -338,30 +344,33 @@ function NLP() {
     gap: "clamp(12px, 2vw, 16px)",
     minHeight: 0,
     scrollbarWidth: "thin",
-    scrollbarColor: "#8b5cf6 transparent",
+    scrollbarColor: "rgba(255, 255, 255, 0.4) transparent",
   };
 
   const inputSectionStyle = {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    background: "rgba(26, 27, 62, 0.6)",
-    borderRadius: "16px",
-    border: "1px solid rgba(139, 92, 246, 0.2)",
-    backdropFilter: "blur(10px)",
+    background: "rgba(255, 255, 255, 0.15)",
+    borderRadius: "20px",
+    border: "2px solid rgba(255, 255, 255, 0.2)",
+    backdropFilter: "blur(20px)",
     minHeight: window.innerWidth <= 768 ? "250px" : 0,
     minWidth: window.innerWidth <= 768 ? "100%" : "280px",
     maxWidth: window.innerWidth <= 768 ? "100%" : "400px",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+    transition: "all 0.3s ease",
   };
 
   const inputHeaderStyle = {
     padding: "clamp(12px, 2vw, 16px) clamp(16px, 3vw, 20px)",
-    borderBottom: "1px solid rgba(139, 92, 246, 0.2)",
+    borderBottom: "2px solid rgba(255, 255, 255, 0.15)",
     display: "flex",
     alignItems: "center",
     gap: "12px",
     flexShrink: 0,
     flexWrap: "wrap",
+    background: "rgba(255, 255, 255, 0.05)",
   };
 
   const inputBodyStyle = {
@@ -382,35 +391,38 @@ function NLP() {
   const messageContentStyle = (isUser) => ({
     maxWidth: window.innerWidth <= 768 ? "90%" : "80%",
     padding: "clamp(10px, 2vw, 12px) clamp(12px, 3vw, 16px)",
-    borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+    borderRadius: isUser ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
     background: isUser
-      ? "linear-gradient(135deg, #7c3aed, #8b5cf6)"
-      : "rgba(45, 27, 105, 0.6)",
-    color: "#ffffff",
-    border: isUser ? "none" : "1px solid rgba(139, 92, 246, 0.3)",
+      ? "linear-gradient(135deg, #a855f7, #c084fc)"
+      : "rgba(255, 255, 255, 0.25)",
+    color: "#000000ff",
+    border: "1px solid rgba(255, 255, 255, 0.3)",
     boxShadow: isUser
-      ? "0 8px 16px rgba(124, 58, 237, 0.4)"
-      : "0 4px 12px rgba(0, 0, 0, 0.3)",
+      ? "0 8px 20px rgba(168, 85, 247, 0.4)"
+      : "0 4px 15px rgba(0, 0, 0, 0.2)",
     fontSize: "clamp(0.8rem, 2vw, 0.875rem)",
-    lineHeight: "1.5",
+    lineHeight: "1.6",
     whiteSpace: "pre-wrap",
     backdropFilter: "blur(10px)",
     wordWrap: "break-word",
     overflowWrap: "break-word",
+    transition: "all 0.3s ease",
   });
 
   const listenButtonStyle = (isSpeaking) => ({
     marginTop: "8px",
-    padding: "4px 8px",
-    background: isSpeaking ? "#ef4444" : "#6b7280",
+    padding: "6px 12px",
+    background: isSpeaking
+      ? "linear-gradient(135deg, #ef4444, #dc2626)"
+      : "linear-gradient(135deg, #8b5cf6, #7c3aed)",
     color: "#ffffff",
     border: "none",
-    borderRadius: "6px",
-    fontSize: "0.7rem",
-    fontWeight: "500",
+    borderRadius: "8px",
+    fontSize: "0.75rem",
+    fontWeight: "600",
     cursor: "pointer",
-    transition: "all 0.2s ease",
-    opacity: 0.8,
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
   });
 
   const thinkingStyle = {
@@ -418,9 +430,9 @@ function NLP() {
     justifyContent: "center",
     alignItems: "center",
     padding: "20px",
-    color: "#8b5cf6",
+    color: "#ffffff",
     fontSize: "0.875rem",
-    fontWeight: "500",
+    fontWeight: "600",
   };
 
   const typingIndicatorStyle = {
@@ -432,20 +444,22 @@ function NLP() {
     width: "8px",
     height: "8px",
     borderRadius: "50%",
-    background: "#8b5cf6",
+    background: "#ffffff",
     animation: `pulse 1.4s ease-in-out infinite`,
     animationDelay: delay,
     marginRight: "4px",
+    boxShadow: "0 0 10px rgba(255, 255, 255, 0.5)",
   });
 
   const errorStyle = {
     padding: "12px 16px",
-    background: "rgba(239, 68, 68, 0.2)",
-    color: "#fca5a5",
-    borderRadius: "8px",
+    background: "rgba(239, 68, 68, 0.3)",
+    color: "#ffffff",
+    borderRadius: "12px",
     fontSize: "0.875rem",
     textAlign: "center",
-    border: "1px solid rgba(239, 68, 68, 0.3)",
+    border: "2px solid rgba(239, 68, 68, 0.5)",
+    backdropFilter: "blur(10px)",
   };
 
   const toggleLabelStyle = {
@@ -454,14 +468,14 @@ function NLP() {
     gap: "8px",
     cursor: "pointer",
     fontSize: "0.875rem",
-    color: "#e2e8f0",
-    fontWeight: "500",
+    color: "#ffffff",
+    fontWeight: "600",
   };
 
   const checkboxStyle = {
-    width: "16px",
-    height: "16px",
-    accentColor: "#8b5cf6",
+    width: "18px",
+    height: "18px",
+    accentColor: "#a855f7",
     cursor: "pointer",
   };
 
@@ -477,8 +491,8 @@ function NLP() {
     alignItems: "center",
     gap: "8px",
     fontSize: "0.875rem",
-    color: listening ? "#10b981" : "#94a3b8",
-    fontWeight: "500",
+    color: listening ? "#10b981" : "rgba(255, 255, 255, 0.8)",
+    fontWeight: "600",
   };
 
   const buttonGroupStyle = {
@@ -489,40 +503,42 @@ function NLP() {
 
   const speechButtonStyle = (type, disabled = false) => {
     const colors = {
-      start: "#10b981",
-      stop: "#ef4444",
-      reset: "#f59e0b",
+      start: "linear-gradient(135deg, #10b981, #059669)",
+      stop: "linear-gradient(135deg, #ef4444, #dc2626)",
+      reset: "linear-gradient(135deg, #f59e0b, #d97706)",
     };
 
     return {
       flex: window.innerWidth <= 480 ? "1 1 100px" : 1,
-      padding: "clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 12px)",
-      background: disabled ? "#374151" : colors[type],
-      color: disabled ? "#6b7280" : "#ffffff",
-      border: "none",
-      borderRadius: "8px",
-      fontSize: "clamp(0.75rem, 2vw, 0.8rem)",
-      fontWeight: "500",
+      padding: "clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 14px)",
+      background: disabled ? "rgba(255, 255, 255, 0.1)" : colors[type],
+      color: "#ffffff",
+      border: disabled ? "2px solid rgba(255, 255, 255, 0.2)" : "none",
+      borderRadius: "10px",
+      fontSize: "clamp(0.75rem, 2vw, 0.875rem)",
+      fontWeight: "600",
       cursor: disabled ? "not-allowed" : "pointer",
-      transition: "all 0.2s ease",
+      transition: "all 0.3s ease",
       opacity: disabled ? 0.5 : 1,
       minWidth: "60px",
+      boxShadow: disabled ? "none" : "0 4px 15px rgba(0, 0, 0, 0.2)",
     };
   };
 
   const transcriptAreaStyle = {
     flex: 1,
     padding: "clamp(10px, 2vw, 12px)",
-    background: "rgba(139, 92, 246, 0.1)",
-    borderRadius: "8px",
+    background: "rgba(255, 255, 255, 0.15)",
+    borderRadius: "10px",
     fontSize: "clamp(0.8rem, 2vw, 0.875rem)",
-    color: "#e2e8f0",
-    border: "1px solid rgba(139, 92, 246, 0.2)",
+    color: "#ffffff",
+    border: "2px solid rgba(255, 255, 255, 0.2)",
     fontStyle: transcript ? "normal" : "italic",
     minHeight: window.innerWidth <= 768 ? "80px" : "60px",
     resize: "vertical",
     outline: "none",
     fontFamily: "inherit",
+    backdropFilter: "blur(10px)",
   };
 
   const textInputAreaStyle = {
@@ -535,32 +551,34 @@ function NLP() {
   const textInputStyle = {
     flex: 1,
     padding: "clamp(10px, 2vw, 12px)",
-    background: "rgba(45, 27, 105, 0.3)",
-    border: "1px solid rgba(139, 92, 246, 0.2)",
-    borderRadius: "8px",
+    background: "rgba(255, 255, 255, 0.15)",
+    border: "2px solid rgba(255, 255, 255, 0.2)",
+    borderRadius: "10px",
     fontSize: "clamp(0.8rem, 2vw, 0.875rem)",
-    color: "#e2e8f0",
+    color: "#ffffff",
     outline: "none",
-    transition: "all 0.2s ease",
+    transition: "all 0.3s ease",
     minHeight: window.innerWidth <= 768 ? "80px" : "60px",
     resize: "vertical",
     fontFamily: "inherit",
+    backdropFilter: "blur(10px)",
   };
 
   const sendButtonStyle = (disabled) => ({
     padding: "clamp(10px, 2vw, 12px) clamp(16px, 3vw, 20px)",
     background: disabled
-      ? "rgba(107, 114, 128, 0.3)"
-      : "linear-gradient(135deg, #7c3aed, #8b5cf6)",
-    color: disabled ? "#6b7280" : "#ffffff",
-    border: "none",
-    borderRadius: "8px",
+      ? "rgba(255, 255, 255, 0.1)"
+      : "linear-gradient(135deg, #a855f7, #c084fc)",
+    color: "#ffffff",
+    border: disabled ? "2px solid rgba(255, 255, 255, 0.2)" : "none",
+    borderRadius: "10px",
     fontSize: "clamp(0.8rem, 2vw, 0.875rem)",
     fontWeight: "600",
     cursor: disabled ? "not-allowed" : "pointer",
-    transition: "all 0.2s ease",
+    transition: "all 0.3s ease",
     opacity: disabled ? 0.5 : 1,
     width: "100%",
+    boxShadow: disabled ? "none" : "0 6px 20px rgba(168, 85, 247, 0.4)",
   });
 
   const keyframes = `
@@ -591,20 +609,21 @@ function NLP() {
     }
 
     *::-webkit-scrollbar {
-      width: 6px;
+      width: 8px;
     }
 
     *::-webkit-scrollbar-track {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.1);
+      borderRadius: 10px;
     }
 
     *::-webkit-scrollbar-thumb {
-      background-color: #8b5cf6;
-      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.4);
+      borderRadius: 10px;
     }
 
     *::-webkit-scrollbar-thumb:hover {
-      background-color: #7c3aed;
+      background: rgba(255, 255, 255, 0.6);
     }
 
     @media (max-width: 768px) {
@@ -644,9 +663,11 @@ function NLP() {
                         onClick={() => speakText(message.text, index)}
                         onMouseEnter={(e) => {
                           e.target.style.opacity = "1";
+                          e.target.style.transform = "scale(1.05)";
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.opacity = "0.8";
+                          e.target.style.opacity = "1";
+                          e.target.style.transform = "scale(1)";
                         }}
                       >
                         {speakingMessageId === index ? "⏹" : "🔊"}
@@ -748,12 +769,14 @@ function NLP() {
                     disabled={!transcript.trim()}
                     onMouseEnter={(e) => {
                       if (!e.target.disabled) {
-                        e.target.style.transform = "translateY(-1px)";
+                        e.target.style.transform = "translateY(-2px)";
+                        e.target.style.boxShadow = "0 8px 25px rgba(168, 85, 247, 0.5)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!e.target.disabled) {
                         e.target.style.transform = "translateY(0)";
+                        e.target.style.boxShadow = "0 6px 20px rgba(168, 85, 247, 0.4)";
                       }
                     }}
                   >
@@ -772,12 +795,12 @@ function NLP() {
                       }
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = "#8b5cf6";
+                      e.target.style.borderColor = "rgba(255, 255, 255, 0.5)";
                       e.target.style.boxShadow =
-                        "0 0 0 2px rgba(139, 92, 246, 0.2)";
+                        "0 0 0 3px rgba(255, 255, 255, 0.2)";
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = "rgba(139, 92, 246, 0.2)";
+                      e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
                       e.target.style.boxShadow = "none";
                     }}
                     placeholder="Ask about the Indian Constitution..."
@@ -792,12 +815,14 @@ function NLP() {
                     disabled={isTyping || isThinking || !inputMessage.trim()}
                     onMouseEnter={(e) => {
                       if (!e.target.disabled) {
-                        e.target.style.transform = "translateY(-1px)";
+                        e.target.style.transform = "translateY(-2px)";
+                        e.target.style.boxShadow = "0 8px 25px rgba(168, 85, 247, 0.5)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!e.target.disabled) {
                         e.target.style.transform = "translateY(0)";
+                        e.target.style.boxShadow = "0 6px 20px rgba(168, 85, 247, 0.4)";
                       }
                     }}
                   >

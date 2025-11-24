@@ -26,10 +26,15 @@ function MultiQuiz() {
 
   // Initialize socket connection
   useEffect(() => {
-  const newSocket = io("ws://localhost:5009")
+  const newSocket = io("http://192.168.1.37:5009")
 
     newSocket.on("connect", () => {
       setConnectionError(false)
+      toast.success("Connected to game server! 🎮", {
+        position: "top-right",
+        autoClose: 3000,
+        theme: "dark",
+      })
     })
 
     newSocket.on("connect_error", () => {

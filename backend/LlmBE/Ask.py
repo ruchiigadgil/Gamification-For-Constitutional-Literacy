@@ -6,6 +6,7 @@ from flask_cors import CORS
 import google.generativeai as genai
 from dotenv import load_dotenv
 import sys
+from transformers import pipeline
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +20,50 @@ if not api_key:
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Load DistilBART summarizer once at startup (fast on CPU, great for kids)
+print("🔄 Loading summarization model for easy language...")
+summarizer = pipeline(
+    "summarization",
+    model="sshleifer/distilbart-cnn-12-6"
+)
+print("✅ Summarizer ready!")
+
+def summarize_text(text):
+    """
+    Always simplify and summarize text into easy words for kids.
+    Works on both short and long responses.
+    """
+    try:
+        # Short text - make it simple and concise
+        if len(text) < 400:
+            summary = summarizer(
+                text,
+                max_length=80,
+                min_length=20,
+                do_sample=False
+            )
+            return summary[0]["summary_text"]
+
+        # Long text - break into chunks and summarize each
+        chunks = []
+        for i in range(0, len(text), 800):
+            part = text[i:i+800]
+            summary = summarizer(
+                part,
+                max_length=120,
+                min_length=40,
+                do_sample=False
+            )
+            chunks.append(summary[0]["summary_text"])
+        
+        # Join all summarized chunks
+        return " ".join(chunks)
+
+    except Exception as e:
+        print(f"⚠️ Summarization error: {e}")
+        # If summarization fails, return original text
+        return text
 
 def generate_content(user_query, system_prompt_text):
     try:
@@ -78,8 +123,19 @@ def generate_endpoint():
 
     try:
         response_text = generate_content(user_query, system_prompt_text)
-        # Parse the JSON string (exact from front.py)
+        
+        # Parse the JSON response from Gemini
         response_json = json.loads(response_text)
+        
+        # 🌟 ALWAYS simplify all text fields into easy words for kids
+        print("📝 Simplifying response for easy understanding...")
+        for key, value in response_json.items():
+            if isinstance(value, str) and value.strip():
+                # Summarize/simplify each text field
+                response_json[key] = summarize_text(value)
+                print(f"✅ Simplified '{key}' field")
+        
+        print("🎉 Response ready in easy language!")
         return jsonify(response_json)
     except json.JSONDecodeError as e:
         print(f"JSON Decode Error: {str(e)}")

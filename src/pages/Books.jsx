@@ -4,6 +4,7 @@ import Select from "react-select";
 const BookPage = () => {
   const [filter, setFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [scrollProgress, setScrollProgress] = useState({});
 
   const articlesRef = useRef(null);
   const booksRef = useRef(null);
@@ -17,16 +18,15 @@ const BookPage = () => {
 
   useEffect(() => {
     if (filter === "articles" && articlesRef.current) {
-      articlesRef.current.scrollIntoView({ behavior: "smooth" });
+      articlesRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (filter === "books" && booksRef.current) {
-      booksRef.current.scrollIntoView({ behavior: "smooth" });
+      booksRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (filter === "youtube" && youtubeRef.current) {
-      youtubeRef.current.scrollIntoView({ behavior: "smooth" });
+      youtubeRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [filter]);
 
   const resources = {
-    
     books: [
       {
         id: "The Boy Who Asked Why",
@@ -59,7 +59,7 @@ const BookPage = () => {
         img: "https://ncert.nic.in/textbook/pdf/keps2cc.jpg",
       },
     ],
-    The_Constitution_of_India:[
+    The_Constitution_of_India: [
       {
         id: "English",
         name: "English",
@@ -189,292 +189,470 @@ const BookPage = () => {
     );
   };
 
+  const handleScroll = (e, category) => {
+    const element = e.target;
+    const scrollPercentage = (element.scrollLeft / (element.scrollWidth - element.clientWidth)) * 100;
+    setScrollProgress({ ...scrollProgress, [category]: scrollPercentage });
+  };
+
   return (
     <div style={styles.container}>
-      <div style={styles.row}>
-        <h1 style={styles.text}>Books / References</h1>
+      {/* Animated background particles */}
+      <div style={styles.particle1}></div>
+      <div style={styles.particle2}></div>
+      <div style={styles.particle3}></div>
+
+      <div style={styles.header}>
+        <h1 style={styles.title}>
+          <span style={styles.titleIcon}>📚</span>
+          Books & References
+          <span style={styles.titleIcon}>✨</span>
+        </h1>
+        <p style={styles.subtitle}>Explore our curated collection of educational resources</p>
       </div>
 
-      <div style={styles.searchBar}>
-        <input
-          type="text"
-          placeholder="Search..."
-          aria-label="Search Books and References"
-          style={styles.input}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <div style={styles.container2}>
-          <Select
-            options={data}
-            placeholder="Filter By"
-            aria-label="Filter Books and References"
-            onChange={(selected) => setFilter(selected.value)}
-            styles={{
-              control: (base) => ({
-                ...base,
-                background: "white",
-                borderRadius: 15,
-                width: 200,
-                border: "3px solid gray",
-                padding: "15px",
-                fontSize: "24px",
-              }),
-              placeholder: (base) => ({
-                ...base,
-                color: "gray",
-                fontSize: "24px",
-              }),
-            }}
+      <div style={styles.searchContainer}>
+        <div style={styles.searchBar}>
+          <span style={styles.searchIcon}>🔍</span>
+          <input
+            type="text"
+            placeholder="Search for books, articles, videos..."
+            aria-label="Search Books and References"
+            style={styles.input}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
-      </div>
-
-      {Object.keys(resources).map((category) => (
-        <div
-          key={category}
-          ref={
-            category === "articles"
-              ? articlesRef
-              : category === "books"
-              ? booksRef
-              : youtubeRef
-          }
-          style={styles.container3}
-        >
-          <h2 style={styles.headline}>
-            {category.charAt(0).toUpperCase() + category.slice(1)}
-          </h2>
-          <div style={styles.box}>
-            {filteredResources(category).map((resource) => (
-              <a
-                key={resource.id}
-                href={resource.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  ...styles.resourceItem,
-                  ...styles.specialResource,
-                }}
-              >
-                <img
-                  src={resource.img}
-                  alt={resource.name}
-                  style={
-                    category === "books" ? styles.image_book : styles.image
-                  }
-                />
-                <p style={styles.resourceText}>{resource.id}</p>
-              </a>
-            ))}
+          <div style={styles.filterContainer}>
+            <Select
+              options={data}
+              placeholder="Filter"
+              aria-label="Filter Books and References"
+              onChange={(selected) => setFilter(selected?.value)}
+              isClearable
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  background: "rgba(255, 255, 255, 0.25)",
+                  borderRadius: 20,
+                  minWidth: 180,
+                  border: "2px solid rgba(255, 255, 255, 0.4)",
+                  padding: "8px 5px",
+                  fontSize: "16px",
+                  backdropFilter: "blur(10px)",
+                  boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+                  cursor: "pointer",
+                }),
+                placeholder: (base) => ({
+                  ...base,
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                }),
+                singleValue: (base) => ({
+                  ...base,
+                  color: "#ffffff",
+                  fontWeight: "600",
+                }),
+                menu: (base) => ({
+                  ...base,
+                  background: "rgba(255, 255, 255, 0.98)",
+                  borderRadius: 15,
+                  backdropFilter: "blur(20px)",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  background: state.isFocused
+                    ? "linear-gradient(135deg, #a855f7, #c084fc)"
+                    : "transparent",
+                  color: state.isFocused ? "#ffffff" : "#333",
+                  cursor: "pointer",
+                  padding: "12px 20px",
+                  fontWeight: state.isFocused ? "600" : "500",
+                  transition: "all 0.2s ease",
+                }),
+              }}
+            />
           </div>
         </div>
-      ))}
+      </div>
+
+      {Object.keys(resources).map((category) => {
+        const filtered = filteredResources(category);
+        if (filtered.length === 0) return null;
+
+        return (
+          <div
+            key={category}
+            ref={
+              category === "articles"
+                ? articlesRef
+                : category === "books"
+                ? booksRef
+                : category === "youtube"
+                ? youtubeRef
+                : null
+            }
+            style={styles.section}
+          >
+            <div style={styles.sectionHeader}>
+              <h2 style={styles.headline}>
+                <span style={styles.categoryIcon}>
+                  {category === "books" ? "📖" : category === "youtube" ? "🎥" : "📄"}
+                </span>
+                {category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")}
+                <span style={styles.badge}>{filtered.length}</span>
+              </h2>
+            </div>
+
+            <div
+              style={styles.scrollContainer}
+              onScroll={(e) => handleScroll(e, category)}
+            >
+              <div style={styles.box}>
+                {filtered.map((resource, index) => (
+                  <a
+                    key={resource.id}
+                    href={resource.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      ...styles.card,
+                      animationDelay: `${index * 0.1}s`,
+                    }}
+                  >
+                    <div style={styles.imageContainer}>
+                      <img
+                        src={resource.img}
+                        alt={resource.name}
+                        style={category === "books" ? styles.imageBook : styles.image}
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/300x400?text=No+Image";
+                        }}
+                      />
+                      <div style={styles.overlay}>
+                        <span style={styles.viewText}>View Resource →</span>
+                      </div>
+                    </div>
+                    <div style={styles.cardContent}>
+                      <p style={styles.resourceTitle}>{resource.id}</p>
+                      <span style={styles.readMore}>Learn more</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Scroll indicator */}
+            <div style={styles.scrollIndicator}>
+              <div
+                style={{
+                  ...styles.scrollProgress,
+                  width: `${scrollProgress[category] || 0}%`,
+                }}
+              ></div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
 
-export default BookPage;
-
-// const styles = {
-//   container: { backgroundColor: 'black', padding: '30px', minHeight: '100vh', overflow: 'hidden' },
-//   text: { color: '#a9def9', fontSize: '40px', fontWeight: 'bold', textAlign: 'center' },
-//   row: { display: 'flex', alignItems: 'center', gap: '20px', marginTop: '40px' },
-//   input: { flex: 1, fontSize: '20px', padding: '2px' },
-//   searchBar: { display: 'flex', alignItems: 'center', backgroundColor: '#d0f4de', padding: '25px', borderRadius: '60px', width: '60%', height: '20px', margin: '20px auto' },
-//   container2: { display: 'flex', alignItems: 'center' },
-//   headline: { color: '#a9def9', fontSize: 'px', fontWeight: '900', marginBottom: '20px' },
-//   box: { display: 'flex', gap: '25px', backgroundColor: '#e4c1f9', height: '350px', alignItems: 'center', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
-//   image: { height: '200', width: '400px', borderRadius: '20px' },
-//   image_book: { height: '300px', width: '250px', borderRadius: '20px' },
-//   resourceText: { marginTop: 5, fontSize: 16, fontWeight: 'bold' },
-//   specialResource: { color: 'black', textDecoration: 'none' }
-// };
-
-// const styles = {
-//   container: {
-//     backgroundColor: "black",
-//     padding: "30px",
-//     minHeight: "100vh",
-//     overflow: "hidden",
-//   },
-//   text: {
-//     color: "#a9def9",
-//     fontSize: "40px",
-//     fontWeight: "bold",
-//     textAlign: "center",
-//   },
-//   row: {
-//     display: "flex",
-//     alignItems: "center",
-//     gap: "20px",
-//     marginTop: "40px",
-//   },
-//   input: {
-//     flex: 1,
-//     fontSize: "20px",
-//     padding: "8px",
-//     borderRadius: "10px",
-//     border: "2px solid gray",
-//   },
-//   searchBar: {
-//     display: "flex",
-//     alignItems: "center",
-//     backgroundColor: "#d0f4de",
-//     padding: "15px 25px",
-//     borderRadius: "60px",
-//     width: "60%",
-//     margin: "20px auto",
-//     gap: "15px",
-//   },
-//   container2: {
-//     display: "flex",
-//     alignItems: "center",
-//   },
-//   headline: {
-//     color: "#a9def9",
-//     fontSize: "28px", // fixed from 'px'
-//     fontWeight: "900",
-//     marginBottom: "20px",
-//   },
-//   box: {
-//     display: "flex",
-//     gap: "25px",
-//     backgroundColor: "#e4c1f9",
-//     height: "350px",
-//     alignItems: "center",
-//     overflowX: "auto",
-//     whiteSpace: "nowrap",
-//     padding: "10px",
-//     borderRadius: "15px",
-//   },
-//   image: {
-//     height: "200px", // fixed
-//     width: "400px", // fixed
-//     borderRadius: "20px",
-//     objectFit: "cover",
-//   },
-//   image_book: {
-//     height: "300px", // fixed
-//     width: "250px", // fixed
-//     borderRadius: "20px",
-//     objectFit: "cover",
-//   },
-//   resourceText: {
-//     marginTop: "5px",
-//     fontSize: "16px",
-//     fontWeight: "bold",
-//     textAlign: "center",
-//   },
-//   specialResource: {
-//     color: "black",
-//     textDecoration: "none",
-//   },
-// };
-
 const styles = {
   container: {
-    backgroundColor: "#121212",
-    padding: "30px",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
     minHeight: "100vh",
+    padding: "40px 20px",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    position: "relative",
     overflow: "hidden",
-    fontFamily: "Arial, sans-serif",
   },
-  text: {
-    color: "#a9def9",
-    fontSize: "42px",
-    fontWeight: "bold",
+  particle1: {
+    position: "absolute",
+    width: "300px",
+    height: "300px",
+    background: "radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)",
+    borderRadius: "50%",
+    top: "-100px",
+    left: "-100px",
+    animation: "float 20s ease-in-out infinite",
+    pointerEvents: "none",
+  },
+  particle2: {
+    position: "absolute",
+    width: "200px",
+    height: "200px",
+    background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)",
+    borderRadius: "50%",
+    top: "30%",
+    right: "-50px",
+    animation: "float 15s ease-in-out infinite reverse",
+    pointerEvents: "none",
+  },
+  particle3: {
+    position: "absolute",
+    width: "250px",
+    height: "250px",
+    background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)",
+    borderRadius: "50%",
+    bottom: "10%",
+    left: "20%",
+    animation: "float 18s ease-in-out infinite",
+    pointerEvents: "none",
+  },
+  header: {
     textAlign: "center",
-    marginBottom: "30px",
+    marginBottom: "40px",
+    position: "relative",
+    zIndex: 1,
   },
-  row: {
+  title: {
+    fontSize: "52px",
+    fontWeight: "800",
+    background: "linear-gradient(135deg, #ffffff 0%, #f0e7ff 100%)",
+    backgroundClip: "text",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    marginBottom: "10px",
+    letterSpacing: "-1px",
+    textShadow: "0 4px 20px rgba(255, 255, 255, 0.3)",
     display: "flex",
     alignItems: "center",
-    gap: "20px",
-    marginTop: "20px",
+    justifyContent: "center",
+    gap: "15px",
   },
-  input: {
-    flex: 1,
+  titleIcon: {
+    fontSize: "48px",
+    filter: "drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3))",
+  },
+  subtitle: {
+    color: "rgba(255, 255, 255, 0.9)",
     fontSize: "18px",
-    padding: "12px 15px",
-    borderRadius: "30px",
-    border: "2px solid #a9def9",
-    outline: "none",
+    fontWeight: "400",
+    letterSpacing: "0.5px",
+  },
+  searchContainer: {
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: "60px",
+    position: "relative",
+    zIndex: 1,
   },
   searchBar: {
     display: "flex",
     alignItems: "center",
-    backgroundColor: "#1e1e1e",
-    padding: "10px 20px",
-    borderRadius: "40px",
-    width: "65%",
-    margin: "20px auto 50px auto",
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "12px 25px",
+    borderRadius: "50px",
+    width: "90%",
+    maxWidth: "900px",
     gap: "15px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
+    backdropFilter: "blur(20px)",
+    border: "2px solid rgba(255, 255, 255, 0.3)",
+    transition: "all 0.3s ease",
   },
-  container2: {
+  searchIcon: {
+    fontSize: "24px",
+    filter: "grayscale(1) brightness(2)",
+  },
+  input: {
+    flex: 1,
+    fontSize: "17px",
+    padding: "12px 15px",
+    borderRadius: "30px",
+    border: "none",
+    outline: "none",
+    background: "rgba(255, 255, 255, 0.25)",
+    color: "#ffffff",
+    backdropFilter: "blur(10px)",
+    transition: "all 0.3s ease",
+    fontWeight: "500",
+  },
+  filterContainer: {
     display: "flex",
     alignItems: "center",
   },
+  section: {
+    marginBottom: "60px",
+    position: "relative",
+    zIndex: 1,
+  },
+  sectionHeader: {
+    marginBottom: "25px",
+    paddingLeft: "10px",
+  },
   headline: {
-    color: "#ff99c8",
-    fontSize: "28px",
-    fontWeight: "900",
-    margin: "10px 0 20px 10px",
-    borderLeft: "6px solid #a9def9",
-    paddingLeft: "12px",
+    color: "#ffffff",
+    fontSize: "32px",
+    fontWeight: "800",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    textShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
+    letterSpacing: "-0.5px",
+  },
+  categoryIcon: {
+    fontSize: "36px",
+    filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
+  },
+  badge: {
+    background: "rgba(255, 255, 255, 0.25)",
+    padding: "4px 12px",
+    borderRadius: "20px",
+    fontSize: "16px",
+    fontWeight: "700",
+    marginLeft: "8px",
+    backdropFilter: "blur(10px)",
+  },
+  scrollContainer: {
+    overflowX: "auto",
+    overflowY: "hidden",
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+    borderRadius: "20px",
   },
   box: {
     display: "flex",
-    gap: "25px",
-    backgroundColor: "#222",
-    height: "380px",
-    alignItems: "center",
-    overflowX: "auto",
-    whiteSpace: "nowrap",
-    padding: "20px",
-    borderRadius: "20px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.5)",
+    gap: "30px",
+    padding: "25px 15px",
+    minHeight: "420px",
+    alignItems: "stretch",
   },
-  resourceItem: {
+  card: {
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    minWidth: "250px",
-    maxWidth: "300px",
-    borderRadius: "15px",
-    backgroundColor: "#fff",
-    padding: "15px",
-    boxShadow: "0 6px 12px rgba(0,0,0,0.2)",
-    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    minWidth: "280px",
+    maxWidth: "280px",
+    borderRadius: "20px",
+    background: "rgba(255, 255, 255, 0.95)",
+    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
+    transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+    cursor: "pointer",
+    textDecoration: "none",
+    overflow: "hidden",
+    animation: "slideIn 0.6s ease-out forwards",
+    opacity: 0,
+    transform: "translateY(20px)",
   },
-  resourceItemHover: {
-    transform: "scale(1.05)",
-    boxShadow: "0 10px 20px rgba(0,0,0,0.4)",
+  imageContainer: {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: "20px 20px 0 0",
   },
   image: {
-    height: "180px",
     width: "100%",
-    borderRadius: "12px",
+    height: "200px",
     objectFit: "cover",
-    marginBottom: "12px",
+    transition: "transform 0.4s ease",
   },
-  image_book: {
-    height: "250px",
+  imageBook: {
     width: "100%",
-    borderRadius: "12px",
+    height: "320px",
     objectFit: "cover",
-    marginBottom: "12px",
+    transition: "transform 0.4s ease",
   },
-  resourceText: {
-    marginTop: "5px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    textAlign: "center",
-    color: "#333",
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "linear-gradient(135deg, rgba(168, 85, 247, 0.9), rgba(192, 132, 252, 0.9))",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: 0,
+    transition: "opacity 0.3s ease",
   },
-  specialResource: {
-    color: "black",
-    textDecoration: "none",
+  viewText: {
+    color: "#ffffff",
+    fontSize: "18px",
+    fontWeight: "700",
+    letterSpacing: "0.5px",
+  },
+  cardContent: {
+    padding: "20px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    flex: 1,
+  },
+  resourceTitle: {
+    fontSize: "17px",
+    fontWeight: "700",
+    color: "#1a202c",
+    margin: 0,
+    lineHeight: "1.4",
+  },
+  readMore: {
+    fontSize: "14px",
+    color: "#a855f7",
+    fontWeight: "600",
+    marginTop: "auto",
+  },
+  scrollIndicator: {
+    height: "4px",
+    background: "rgba(255, 255, 255, 0.2)",
+    borderRadius: "2px",
+    marginTop: "15px",
+    overflow: "hidden",
+  },
+  scrollProgress: {
+    height: "100%",
+    background: "linear-gradient(90deg, #a855f7, #c084fc)",
+    transition: "width 0.1s ease",
+    borderRadius: "2px",
   },
 };
+
+// Add CSS animation keyframes
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes slideIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-30px) rotate(5deg);
+    }
+  }
+
+  div[style*="scrollContainer"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  a[style*="card"]:hover {
+    transform: translateY(-12px) scale(1.02) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  a[style*="card"]:hover img {
+    transform: scale(1.1) !important;
+  }
+
+  a[style*="card"]:hover div[style*="overlay"] {
+    opacity: 1 !important;
+  }
+
+  input[style*="input"]:focus {
+    background: rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+  }
+
+  input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+`;
+document.head.appendChild(styleSheet);
+
+export default BookPage;
