@@ -8,6 +8,9 @@ import re
 from google import genai
 from google.genai import types
 
+# import google.generativeai as genai
+
+
 # Load environment variables
 env_path = os.path.join(os.path.dirname(__file__), '.env')
 if not os.path.exists(env_path):

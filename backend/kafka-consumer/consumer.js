@@ -59,7 +59,13 @@ async function run() {
             .limit(5)
             .toArray();
 
-          const entries = top5.map((u, idx) => ({ rank: idx + 1, id: u._id, name: u.fullName || u.email, xp: u.xp || 0 }));
+          const entries = top5.map((u, idx) => ({
+            rank: idx + 1,
+            // store id as a plain string to avoid ObjectId serialization issues on clients
+            id: (u._id && u._id.toString) ? u._id.toString() : u._id,
+            name: u.fullName || u.email,
+            xp: u.xp || 0
+          }));
 
           await leaderboardCache.updateOne(
             { _id: 'top5' },
@@ -68,6 +74,12 @@ async function run() {
           );
 
           console.log('Leaderboard cache updated with top5');
+          // Debug: log the cached entries (first 5) so we can confirm ids are strings
+          try {
+            console.log('DEBUG: cached entries sample:', JSON.stringify(entries.slice(0, 5)));
+          } catch (dbgErr) {
+            console.log('DEBUG: could not stringify entries', dbgErr);
+          }
         } else {
           console.log('No fullDocument in payload, ignoring');
         }

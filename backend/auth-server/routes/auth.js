@@ -436,7 +436,12 @@ router.get('/leaderboard', async (req, res) => {
       return res.status(200).json({ success: true, entries: [] });
     }
     const cache = await db.collection('leaderboard_cache').findOne({ _id: 'top5' });
-    const entries = (cache && cache.entries) || [];
+    let entries = (cache && cache.entries) || [];
+    // Ensure ids are plain strings for frontend compatibility
+    entries = entries.map(e => ({
+      ...e,
+      id: (e.id && e.id.toString) ? e.id.toString() : e.id
+    }));
     res.status(200).json({ success: true, entries });
   } catch (err) {
     console.error('Leaderboard fetch error', err);

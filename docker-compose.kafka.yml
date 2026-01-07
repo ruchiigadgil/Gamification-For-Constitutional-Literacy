@@ -34,7 +34,8 @@ services:
     volumes:
       - ./backend/kafka-producer:/app
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      # For development we prefer a local mongo service to avoid Atlas SRV DNS issues inside Docker.
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/inconquest}
       - KAFKA_BROKER=kafka:9092
       - KAFKA_TOPIC=leaderboard-updates
     command: sh -c "npm install kafkajs mongodb --no-save && node publisher.js"
@@ -48,7 +49,8 @@ services:
     volumes:
       - ./backend/kafka-consumer:/app
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      # Default to local mongo service if MONGODB_URI not provided in root .env
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongo:27017/inconquest}
       - KAFKA_BROKER=kafka:9092
       - KAFKA_TOPIC=leaderboard-updates
       - KAFKA_CONSUMER_GROUP=leaderboard-consumer-group
@@ -56,6 +58,18 @@ services:
     depends_on:
       - kafka
       - zookeeper
+      - mongo
+
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo-data:
 # Usage:
 # 1) Create a `.env` next to this file or export MONGODB_URI in your shell before running.
 #    Example .env (copy to .env and set your URI):
